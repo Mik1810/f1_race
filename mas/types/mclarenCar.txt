@@ -1,5 +1,6 @@
 :- write('McLaren MCL38 ready.').
-:- retractall(deltaT(_)), assert(deltaT(1)).
+
+t5
 
 lap1_startE:> write('McLaren LAP 2: Ferrari done lap 1. Norris pushing hard!'), messageA(pitwall, send_message(lap2_mclaren, mclaren)).
 

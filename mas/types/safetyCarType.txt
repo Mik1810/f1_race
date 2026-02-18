@@ -1,5 +1,6 @@
 :- write('Safety Car ready. Standing by.').
-:- retractall(deltaT(_)), assert(deltaT(1)).
+
+t5
 
 deployE:> write('SAFETY CAR: DEPLOYED! Yellow flags! All cars reduce speed!'), messageA(ferrari, send_message(safety_car_deployed, safety_car)), messageA(mclaren, send_message(safety_car_deployed, safety_car)).
 
