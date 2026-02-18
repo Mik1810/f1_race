@@ -87,6 +87,26 @@ function clearAll() {
   PANES.forEach(p => clearPane(p.id));
 }
 
+/* Lines filtered from all panes (plain-string match, case-insensitive) */
+const FILTERED_LINES = [
+  'External event preconditions not verified: no DeltaTime',
+  'This is updated list:',
+  'This is list without duplicates:',
+  'This is list of past event:',
+  'This event is first events:',
+  'Do not arrive all events',
+];
+
+/**
+ * Remove noisy DALI internal lines from the output.
+ */
+function filterNoise(text) {
+  return text
+    .split('\n')
+    .filter(line => !FILTERED_LINES.some(f => line.includes(f)))
+    .join('\n');
+}
+
 /**
  * Given the full text from tmux, return only the part the user
  * should see (everything after the clear snapshot, if any).
@@ -118,7 +138,7 @@ function poll() {
         if (!el) return;
         const full = data[p.id] || '';
         currentText[p.id] = full;
-        const text = visibleText(p.id, full);
+        const text = filterNoise(visibleText(p.id, full));
         const snap = pinned[p.id];
         el.textContent = text;
         if (snap) el.scrollTop = el.scrollHeight;

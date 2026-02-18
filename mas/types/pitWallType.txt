@@ -1,7 +1,5 @@
 :- write('Pit Wall ready. Monitoring the race.').
 
-t5.
-
 lap1_ferrariE:> write('PITWALL: Ferrari lap 1 done. McLaren your turn!'), random(0, 10, R1), if(R1 < 5, (write('PITWALL: SAFETY CAR DEPLOYED! Random event 50pc chance!'), send_m(safety_car, send_message(deploy, pitwall))), write('PITWALL: Race running clean, no safety car.')), messageA(mclaren, send_message(lap1_start, pitwall)).
 
 lap2_mclarenE:> write('PITWALL: McLaren lap 2 done. Ferrari lap 3!'), random(0, 10, R2), if(R2 < 3, (write('PITWALL: HEAVY RAIN WARNING! Random event 30pc chance!'), send_m(ferrari, send_message(rain_warning, pitwall)), send_m(mclaren, send_message(rain_warning, pitwall))), write('PITWALL: Track conditions nominal.')), messageA(ferrari, send_message(lap3_start, pitwall)).

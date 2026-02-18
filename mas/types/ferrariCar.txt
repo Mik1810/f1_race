@@ -1,7 +1,5 @@
 :- write('Ferrari SF-24 ready.').
 
-t5.
-
 start_raceE:> write('Ferrari LAP 1: LIGHTS OUT AND AWAY WE GO!'), messageA(pitwall, send_message(lap1_ferrari, ferrari)).
 
 box_ferrariE:> write('Ferrari: BOX BOX BOX! Pitting for fresh tires.'), messageA(pitwall, send_message(ferrari_pitted, ferrari)).

@@ -1,7 +1,5 @@
 :- write('McLaren MCL38 ready.').
 
-t5.
-
 lap1_startE:> write('McLaren LAP 2: Ferrari done lap 1. Norris pushing hard!'), messageA(pitwall, send_message(lap2_mclaren, mclaren)).
 
 box_mclarenE:> write('McLaren: BOX BOX BOX! Pitting.'), messageA(pitwall, send_message(mclaren_pitted, mclaren)).

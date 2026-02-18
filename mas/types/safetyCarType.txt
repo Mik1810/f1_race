@@ -1,7 +1,5 @@
 :- write('Safety Car ready. Standing by.').
 
-t5.
-
 deployE:> write('SAFETY CAR: DEPLOYED! Yellow flags! All cars reduce speed!'), messageA(ferrari, send_message(safety_car_deployed, safety_car)), messageA(mclaren, send_message(safety_car_deployed, safety_car)).
 
 recallE:> write('SAFETY CAR: Returning to pits. Green flag waving!').

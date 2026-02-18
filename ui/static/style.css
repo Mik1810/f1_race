@@ -91,8 +91,10 @@ header h1   { font-size: 13px; color: #fff; white-space: nowrap; }
 .pane-body {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 4px 7px;
-  white-space: pre;
+  white-space: pre-wrap;
+  word-break: break-word;
   font-size: 11px;
   line-height: 1.45;
   min-height: 0;
