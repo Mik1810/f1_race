@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>F1 DALI Dashboard</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header>
+  <h1>🏎 F1 Race &middot; DALI Agent Dashboard</h1>
+  <span id="led"></span>
+  <span id="lbl">connecting&hellip;</span>
+  <div class="spacer"></div>
+  <button class="hbtn g" onclick="startRace()">&#9654; Start Race</button>
+  <button class="hbtn y" onclick="deploySC()">&#9888; Deploy SC</button>
+  <button class="hbtn"   onclick="recallSC()">&#10003; Recall SC</button>
+  <button class="hbtn r" onclick="clearAll()" title="Clear all pane views">&#10005; Clear All</button>
+</header>
+
+<div class="grid" id="grid"></div>
+
+<div class="cmdbar">
+  <label>Agent:</label>
+  <select id="tgt"></select>
+  <label>Command:</label>
+  <input id="cmd" type="text" placeholder="send_message(event, sender)."
+         onkeydown="if(event.key==='Enter') doSend()">
+  <button class="sbtn" onclick="doSend()">Send &#8629;</button>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

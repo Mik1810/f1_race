@@ -1,10 +1,15 @@
 :- write('Ferrari SF-24 ready.').
+:- retractall(deltaT(_)), assert(deltaT(1)).
 
-start_raceE:> write('Ferrari LAP 1: LIGHTS OUT AND AWAY WE GO!'), messageA(mclaren, send_message(lap_1_done, ferrari)).
+start_raceE:> write('Ferrari LAP 1: LIGHTS OUT AND AWAY WE GO!'), messageA(pitwall, send_message(lap1_ferrari, ferrari)).
 
-lap_2_doneE:> write('Ferrari LAP 3: Box box box! Undercut strategy!'), messageA(mclaren, send_message(ferrari_pitted, ferrari)).
+box_ferrariE:> write('Ferrari: BOX BOX BOX! Pitting for fresh tires.'), messageA(pitwall, send_message(ferrari_pitted, ferrari)).
 
-mclaren_pittedE:> write('Ferrari LAP 4: McLaren out of pits. Defending position!'), messageA(mclaren, send_message(final_lap, ferrari)).
+lap3_startE:> write('Ferrari LAP 3: Back on track pushing hard!'), messageA(pitwall, send_message(lap3_ferrari, ferrari)).
 
-finishE:> write('Ferrari LAP 5: CHEQUERED FLAG! Ferrari wins the Grand Prix! FORZA FERRARI!').
+final_lapE:> write('Ferrari FINAL LAP: Defending P1! FORZA FERRARI!'), messageA(pitwall, send_message(finish_ferrari, ferrari)).
+
+rain_warningE:> write('Ferrari: Rain detected! Switching to intermediate tires!').
+
+safety_car_deployedE:> write('Ferrari: Safety car on track. Reducing speed.').
 

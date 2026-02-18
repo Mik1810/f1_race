@@ -1,8 +1,13 @@
 :- write('McLaren MCL38 ready.').
+:- retractall(deltaT(_)), assert(deltaT(1)).
 
-lap_1_doneE:> write('McLaren LAP 2: Ferrari done lap 1. Norris closing the gap!'), messageA(ferrari, send_message(lap_2_done, mclaren)).
+lap1_startE:> write('McLaren LAP 2: Ferrari done lap 1. Norris pushing hard!'), messageA(pitwall, send_message(lap2_mclaren, mclaren)).
 
-ferrari_pittedE:> write('McLaren LAP 3: Ferrari in the pits! McLaren takes virtual lead! McLaren also boxes!'), messageA(ferrari, send_message(mclaren_pitted, mclaren)).
+box_mclarenE:> write('McLaren: BOX BOX BOX! Pitting.'), messageA(pitwall, send_message(mclaren_pitted, mclaren)).
 
-final_lapE:> write('McLaren LAP 5: FINAL LAP! DRS attack on Ferrari! Ferrari holds! McLaren P2. Great race!'), messageA(ferrari, send_message(finish, mclaren)).
+lap4_startE:> write('McLaren LAP 4: On fresh tires attacking Ferrari!'), messageA(pitwall, send_message(lap4_mclaren, mclaren)).
+
+rain_warningE:> write('McLaren: Rain! Norris switching to intermediates!').
+
+safety_car_deployedE:> write('McLaren: Safety car deployed. Closing the gap to Ferrari.').
 

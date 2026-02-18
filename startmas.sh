@@ -65,31 +65,29 @@ cp $BUILD_HOME/*.txt work
 # Start the LINDA server in a new console
 srvcmd="$PROLOG --noinfo -l $DALI_HOME/active_server_wi.pl --goal go(3010,'server.txt')."
 echo "server: " $srvcmd
-tmux new-session -d -s f1_race $srvcmd
+tmux new-session -d -s f1_race -n "server" $srvcmd
 
 echo "Server ready. Starting the MAS..."
 $WAIT > /dev/null  # Wait for a while
 
-# Start user agent in another vertical split
-tmux split-window -v -t f1_race "$PROLOG --noinfo -l $DALI_HOME/active_user_wi.pl --goal utente."
+# Start user agent in a new window
+tmux new-window -t f1_race -n "user" "$PROLOG --noinfo -l $DALI_HOME/active_user_wi.pl --goal utente."
 echo "Launching agents instances..."
 $WAIT > /dev/null  # Wait for a while
 
-# Launch agents in horizontal splits, one after the other
+# Launch agents in new windows, one after the other
 for agent_filename in $BUILD_HOME/*; do
     agent_base="${agent_filename##*/}"
+    agent_name="${agent_base%.*}"   # strip .txt for window name
     echo "Agent: $agent_base"
     # Create the agent configuration
     $current_dir/conf/makeconf.sh $agent_base $DALI_HOME
-    # Start the agent in the new pane
-    tmux split-window -v -t f1_race "$current_dir/conf/startagent.sh $agent_base $PROLOG $DALI_HOME"
+    # Start the agent in a new window
+    tmux new-window -t f1_race -n "$agent_name" "$current_dir/conf/startagent.sh $agent_base $PROLOG $DALI_HOME"
     $WAIT > /dev/null  # Wait a bit before launching the next agent
 done
 
 echo "MAS started."
-
-# Select an even layout to properly display the panes
-tmux select-layout -t f1_race tiled
 
 # Attach to the session so you can see everything
 tmux attach -t f1_race

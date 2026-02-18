@@ -1,0 +1,36 @@
+#!/bin/bash
+# Starts the F1 Race dashboard.
+# Creates a local venv on first run, then reuses it.
+# Works on Debian/Ubuntu even without python3-full / python3-venv installed.
+
+set -e
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VENV="$SCRIPT_DIR/.venv"
+PYTHON="$VENV/bin/python"
+
+# ── Create venv ──────────────────────────────────────────────────────────────
+if [[ ! -f "$PYTHON" ]]; then
+    echo "Creating virtual environment..."
+    python3 -m venv "$VENV" || {
+        echo ""
+        echo "ERROR: python3-venv is missing. Fix with:"
+        echo "  sudo apt install python3-venv python3-full"
+        exit 1
+    }
+fi
+
+# ── Bootstrap pip if missing (minimal Debian installs omit it) ───────────────
+if ! "$PYTHON" -m pip --version &>/dev/null; then
+    echo "Bootstrapping pip..."
+    "$PYTHON" -m ensurepip --upgrade 2>/dev/null || {
+        # ensurepip also missing — download pip directly
+        echo "ensurepip not available, downloading pip..."
+        curl -sS https://bootstrap.pypa.io/get-pip.py | "$PYTHON"
+    }
+fi
+
+# ── Install dependencies ─────────────────────────────────────────────────────
+"$PYTHON" -m pip install -q -r "$SCRIPT_DIR/requirements.txt"
+
+# ── Launch ───────────────────────────────────────────────────────────────────
+exec "$PYTHON" "$SCRIPT_DIR/dashboard.py" "$@"
