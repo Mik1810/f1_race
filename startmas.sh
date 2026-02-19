@@ -28,12 +28,72 @@ MAIN_HOME=../..
 DALI_HOME=../../src
 CONF_DIR=conf
 PROLOG="$SICSTUS_HOME/bin/sicstus"
-WAIT="ping -c 3 127.0.0.1"
+WAIT="sleep 2"
+LINDA_PORT=3010
 INSTANCES_HOME=mas/instances
 TYPES_HOME=mas/types
 BUILD_HOME=build
 
-# Check if SICStus Prolog exists and is executable
+# ── Pre-cleanup: ensure no stale DALI instance is running ──────────────────
+# Uses a lock file so concurrent startmas.sh invocations never overlap.
+LOCKFILE="/tmp/f1_race_startmas.lock"
+exec 200>"$LOCKFILE"
+flock -x 200   # blocks until any other running instance releases the lock
+
+echo "Cleaning up any previous DALI instance on port $LINDA_PORT..."
+
+# Helper: kill by pattern and WAIT until pgrep confirms the process is gone.
+kill_and_wait() {
+    local pattern="$1"
+    pkill -9 -f "$pattern" 2>/dev/null || true
+    # pgrep loop: pkill delivers the signal but the process may still be
+    # alive for a few hundred ms while the kernel cleans up.
+    for _i in $(seq 1 20); do
+        pgrep -f "$pattern" &>/dev/null || return 0
+        sleep 0.2
+    done
+    echo "WARNING: process matching '$pattern' did not die in 4 s" >&2
+}
+
+# 1. Kill all SICStus processes and wait for them to be truly gone.
+kill_and_wait "active_server_wi.pl"
+kill_and_wait "active_dali_wi.pl"
+kill_and_wait "active_user_wi.pl"
+
+# 2. Kill by port as belt-and-suspenders (handles edge cases where the
+#    process name doesn't match the pattern above).
+ss -tlnp "sport = :$LINDA_PORT" 2>/dev/null \
+  | grep -oP 'pid=\K[0-9]+' \
+  | xargs -r kill -9 2>/dev/null || true
+
+# 3. Destroy any leftover tmux session.
+tmux kill-session -t f1_race 2>/dev/null || true
+
+# 4. Wait until the port is confirmed free.
+#    We check ALL socket states (LISTEN, TIME_WAIT, CLOSE_WAIT, FIN_WAIT…)
+#    because SICStus bind() fails on ANY of them without SO_REUSEADDR.
+echo "Waiting for port $LINDA_PORT to be completely free..."
+for i in $(seq 1 30); do
+    # ss -tan lists every TCP socket in any state; filter for local :LINDA_PORT.
+    # If the output (minus the header line) is empty, the port is fully free.
+    if [ -z "$(ss -tan "sport = :$LINDA_PORT" 2>/dev/null | tail -n +2)" ]; then
+        echo "Port $LINDA_PORT is completely free (after ${i} checks)."
+        break
+    fi
+    # Still occupied — re-kill and wait
+    kill_and_wait "active_server_wi.pl"
+    ss -tlnp "sport = :$LINDA_PORT" 2>/dev/null \
+      | grep -oP 'pid=\K[0-9]+' \
+      | xargs -r kill -9 2>/dev/null || true
+    sleep 1
+    if [ "$i" -eq 30 ]; then
+        echo "WARNING: port $LINDA_PORT still in use after 30 s — proceeding anyway." >&2
+    fi
+done
+# Settling pause: give the kernel time to finalise all socket teardown.
+sleep 2
+echo "Pre-cleanup done."
+# ────────────────────────────────────────────────────────────────────────────
 if [[ -x "$PROLOG" ]]; then
   printf "SICStus Prolog found at %s\n" "$PROLOG"
 else
@@ -67,13 +127,24 @@ srvcmd="$PROLOG --noinfo -l $DALI_HOME/active_server_wi.pl --goal go(3010,'serve
 echo "server: " $srvcmd
 tmux new-session -d -s f1_race -n "server" $srvcmd
 
-echo "Server ready. Starting the MAS..."
-$WAIT > /dev/null  # Wait for a while
+# Wait until the LINDA server is actually listening on port 3010
+echo "Waiting for LINDA server on port $LINDA_PORT..."
+for i in $(seq 1 30); do
+    if nc -z localhost $LINDA_PORT 2>/dev/null; then
+        echo "LINDA server is ready (after ${i}s)."
+        break
+    fi
+    sleep 1
+    if [ $i -eq 30 ]; then
+        echo "ERROR: LINDA server did not start within 30 seconds. Aborting." >&2
+        exit 1
+    fi
+done
 
 # Start user agent in a new window
 tmux new-window -t f1_race -n "user" "$PROLOG --noinfo -l $DALI_HOME/active_user_wi.pl --goal utente."
 echo "Launching agents instances..."
-$WAIT > /dev/null  # Wait for a while
+$WAIT  # Let the user agent initialise before launching real agents
 
 # Launch agents in new windows, one after the other
 for agent_filename in $BUILD_HOME/*; do
@@ -84,16 +155,16 @@ for agent_filename in $BUILD_HOME/*; do
     $current_dir/conf/makeconf.sh $agent_base $DALI_HOME
     # Start the agent in a new window
     tmux new-window -t f1_race -n "$agent_name" "$current_dir/conf/startagent.sh $agent_base $PROLOG $DALI_HOME"
-    $WAIT > /dev/null  # Wait a bit before launching the next agent
+    $WAIT  # Small gap before launching the next agent
 done
 
 echo "MAS started."
 
-# Attach to the session so you can see everything
-tmux attach -t f1_race
-
-echo "Press Enter to shutdown the MAS"
-read
-
-# Clean up processes
-killall sicstus
+# Attach to the session only when running interactively (not when launched by the UI)
+if [ -t 0 ]; then
+    tmux attach -t f1_race
+    echo "Press Enter to shutdown the MAS"
+    read
+    # Clean up processes
+    killall sicstus
+fi

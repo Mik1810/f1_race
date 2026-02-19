@@ -87,6 +87,55 @@ function clearAll() {
   PANES.forEach(p => clearPane(p.id));
 }
 
+/* ── Restart overlay helpers ─────────────────────────── */
+let restarting = false;
+let restartTimer = null;
+
+function showOverlay(msg, sub) {
+  document.getElementById('overlay-msg').textContent = msg;
+  document.getElementById('overlay-sub').textContent = sub || '';
+  document.getElementById('overlay').classList.add('visible');
+}
+function hideOverlay() {
+  if (restartTimer) { clearTimeout(restartTimer); restartTimer = null; }
+  document.getElementById('overlay').classList.remove('visible');
+}
+
+/** Kill SICStus, destroy tmux session and relaunch via startmas.sh. */
+async function restartMas() {
+  // Phase 1: overlay visible while the HTTP call is in flight.
+  // restarting is still false — the poll won't touch the overlay yet.
+  showOverlay('Restarting MAS…', 'Sending kill signal to SICStus');
+  try {
+    const r = await fetch('/api/restart', { method: 'POST' });
+    const data = await r.json();
+    if (data.error) {
+      hideOverlay();
+      alert('Restart failed: ' + data.error);
+      return;
+    }
+  } catch (e) {
+    hideOverlay();
+    alert('Restart request failed: ' + e);
+    return;
+  }
+  // Phase 2: API returned — startmas.sh is running in background.
+  // Set restarting = true AFTER the await so the poll could not have
+  // already cleared it while we were waiting for the response.
+  clearAll();
+  restarting = true;
+  showOverlay('Waiting for agents…', 'LINDA server starting on port 3010');
+
+  // Safety net: hide overlay after 90 s if MAS never comes back.
+  restartTimer = setTimeout(() => {
+    if (restarting) {
+      restarting = false;
+      hideOverlay();
+      document.getElementById('lbl').textContent = 'restart timeout — check MAS';
+    }
+  }, 90000);
+}
+
 /* Lines filtered from all panes (plain-string match, case-insensitive) */
 const FILTERED_LINES = [
   'External event preconditions not verified: no DeltaTime',
@@ -132,6 +181,17 @@ function poll() {
       failCount = 0;
       document.getElementById('led').className = 'on';
       document.getElementById('lbl').textContent = 'live \u2022 1s refresh';
+      if (restarting) {
+        // Hide only when the server pane is actually available in tmux
+        // (not showing the "[pane '...' not available]" placeholder).
+        const serverText = data['server'] || '';
+        if (serverText && !serverText.startsWith('[pane')) {
+          restarting = false;
+          hideOverlay();
+        } else {
+          return; // Not ready yet — skip pane update
+        }
+      }
 
       PANES.forEach(p => {
         const el = document.getElementById('p-' + p.id);

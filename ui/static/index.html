@@ -15,7 +15,7 @@
   <button class="hbtn g" onclick="startRace()">&#9654; Start Race</button>
   <button class="hbtn y" onclick="deploySC()">&#9888; Deploy SC</button>
   <button class="hbtn"   onclick="recallSC()">&#10003; Recall SC</button>
-  <button class="hbtn r" onclick="clearAll()" title="Clear all pane views">&#10005; Clear All</button>
+  <button class="hbtn r" onclick="restartMas()" title="pkill sicstus + restart via startmas.sh">&#8635; Restart MAS</button>
 </header>
 
 <div class="grid" id="grid"></div>
@@ -27,6 +27,12 @@
   <input id="cmd" type="text" placeholder="send_message(event, sender)."
          onkeydown="if(event.key==='Enter') doSend()">
   <button class="sbtn" onclick="doSend()">Send &#8629;</button>
+</div>
+
+<div id="overlay">
+  <div class="spinner"></div>
+  <div id="overlay-msg">Restarting MAS…</div>
+  <div id="overlay-sub">Waiting for LINDA server on port 3010</div>
 </div>
 
 <script src="/static/app.js"></script>
