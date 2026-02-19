@@ -19,12 +19,13 @@ from flask import Flask, jsonify, request, send_from_directory
 SESSION = "f1_race"
 
 PANES = [
-    {"id": "server",     "label": "Server (LINDA)",  "color": "#121212", "border": "#555555"},
-    {"id": "user",       "label": "User Console",    "color": "#0b180b", "border": "#4caf50"},
-    {"id": "ferrari",    "label": "Ferrari SF-24",   "color": "#180505", "border": "#cc2200"},
-    {"id": "mclaren",    "label": "McLaren MCL38",   "color": "#180c00", "border": "#ff8700"},
-    {"id": "pitwall",    "label": "Pit Wall",        "color": "#05051a", "border": "#2277ff"},
-    {"id": "safety_car", "label": "Safety Car",      "color": "#181600", "border": "#ffd700"},
+    {"id": "server",      "label": "Server (LINDA)",  "color": "#121212", "border": "#555555"},
+    {"id": "user",        "label": "User Console",    "color": "#0b180b", "border": "#4caf50"},
+    {"id": "semaphore",   "label": "Semaphore",      "color": "#0a0a18", "border": "#aa88ff"},
+    {"id": "ferrari",     "label": "Ferrari SF-24",   "color": "#180505", "border": "#cc2200"},
+    {"id": "mclaren",     "label": "McLaren MCL38",   "color": "#180c00", "border": "#ff8700"},
+    {"id": "pitwall",     "label": "Pit Wall",        "color": "#05051a", "border": "#2277ff"},
+    {"id": "safety_car",  "label": "Safety Car",      "color": "#181600", "border": "#ffd700"},
 ]
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")

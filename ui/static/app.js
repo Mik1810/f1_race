@@ -5,6 +5,8 @@ let PANES = [];
 const clearSnapshot = {};
 // Whether auto-scroll is active for each pane
 const pinned = {};
+// Whether each pane is minimized
+const minimized = {};
 // Last full text received from API per pane (for snapshot diff)
 const currentText = {};
 
@@ -28,18 +30,21 @@ function buildGrid() {
   g.innerHTML = '';
   PANES.forEach(p => {
     pinned[p.id] = true;
+    minimized[p.id] = false;
     currentText[p.id] = '';
 
     const d = document.createElement('div');
     d.className = 'pane';
+    d.id = 'pane-' + p.id;
     d.style.cssText = `background:${p.color};border-color:${p.border}44`;
 
     d.innerHTML =
       `<div class="pane-hdr" style="background:${p.border}1a;color:${p.border}">` +
         `<span>${p.label}</span>` +
         `<span class="pane-hdr-btns">` +
-          `<span class="pane-btn" id="clear-${p.id}" onclick="clearPane('${p.id}')" title="Clear this pane">&#10005;</span>` +
+          `<span class="pane-btn" id="clear-${p.id}" onclick="clearPane('${p.id}')" title="Clear">&#10005;</span>` +
           `<span class="pane-btn" id="pin-${p.id}"   onclick="togglePin('${p.id}')" title="Toggle auto-scroll">&#8595;</span>` +
+          `<span class="pane-btn" id="min-${p.id}"   onclick="toggleMinimize('${p.id}')" title="Minimize / Expand">&#8212;</span>` +
         `</span>` +
       `</div>` +
       `<div class="pane-body" id="p-${p.id}"></div>`;
@@ -66,7 +71,7 @@ function buildAgentSelect() {
 /* ── Pin / scroll helpers ─────────────────────────────── */
 function updatePinIcon(id) {
   const el = document.getElementById('pin-' + id);
-  if (el) el.style.opacity = pinned[id] ? '.45' : '1';
+  if (el) el.classList.toggle('active', !pinned[id]);
 }
 function togglePin(id) {
   pinned[id] = !pinned[id];
@@ -75,6 +80,41 @@ function togglePin(id) {
     const el = document.getElementById('p-' + id);
     if (el) el.scrollTop = el.scrollHeight;
   }
+}
+
+/* ── Minimize helpers ─────────────────────────────────── */
+function toggleMinimize(id) {
+  const pane = document.getElementById('pane-' + id);
+  if (!pane) return;
+
+  minimized[id] = true;
+  pane.style.display = 'none';
+
+  // Find the pane config for colour
+  const cfg = PANES.find(p => p.id === id);
+  const color  = cfg ? cfg.border : '#888';
+  const label  = cfg ? cfg.label  : id;
+
+  const tray = document.getElementById('minimized-tray');
+  const chip = document.createElement('button');
+  chip.className = 'mini-chip';
+  chip.id = 'chip-' + id;
+  chip.textContent = label;
+  chip.style.cssText = `color:${color};border-color:${color}66`;
+  chip.title = 'Restore ' + label;
+  chip.addEventListener('click', () => restorePane(id));
+  tray.appendChild(chip);
+}
+
+function restorePane(id) {
+  minimized[id] = false;
+  const pane = document.getElementById('pane-' + id);
+  if (pane) pane.style.display = '';
+  const chip = document.getElementById('chip-' + id);
+  if (chip) chip.remove();
+  // Reset the minimize button icon
+  const btn = document.getElementById('min-' + id);
+  if (btn) { btn.innerHTML = '&#8212;'; btn.classList.remove('active'); }
 }
 
 /* ── Clear helpers ────────────────────────────────────── */
@@ -229,7 +269,6 @@ async function seq(...pairs) {
 }
 
 /* ── Quick action buttons ─────────────────────────────── */
-function startRace() { seq('user', 'ferrari.', 'user', 'user.', 'user', 'send_message(start_race, user).'); }
 function deploySC()  { seq('user', 'safety_car.', 'user', 'user.', 'user', 'send_message(deploy, user).'); }
 function recallSC()  { seq('user', 'safety_car.', 'user', 'user.', 'user', 'send_message(recall, user).'); }
 

@@ -1,4 +1,4 @@
-:- write('McLaren MCL38 ready.').
+:- write('McLaren MCL38 ready.'), send_m(semaphore, send_message(ready, mclaren)).
 
 lap1_startE:> write('McLaren LAP 2: Ferrari done lap 1. Norris pushing hard!'), messageA(pitwall, send_message(lap2_mclaren, mclaren)).
 

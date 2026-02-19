@@ -1,4 +1,4 @@
-:- write('Ferrari SF-24 ready.').
+:- write('Ferrari SF-24 ready.'), send_m(semaphore, send_message(ready, ferrari)).
 
 start_raceE:> write('Ferrari LAP 1: LIGHTS OUT AND AWAY WE GO!'), messageA(pitwall, send_message(lap1_ferrari, ferrari)).
 

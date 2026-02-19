@@ -1,6 +1,6 @@
 @echo off
 cls
-title "F1 Race MAS - Ferrari vs McLaren"
+title "F1 Race MAS - Ferrari vs McLaren (with Semaphore)"
 echo ============================================
 echo   DALI F1 Race Simulator - Windows
 echo ============================================
@@ -19,7 +19,9 @@ del /q work\*.pl 2>nul
 del /q work\*.ple 2>nul
 del /q work\*.plv 2>nul
 del /q work\*.plf 2>nul
-copy /Y mas\*.txt work > nul
+REM Ensure work\log\ exists — agents open log files relative to work\
+if not exist work\log mkdir work\log
+REM work\*.txt are the DALI source files (already present; updated manually or via Linux build)
 
 REM Convert backslashes for Prolog path strings
 set daliH=%dali_home:\=/%
@@ -35,13 +37,21 @@ echo [2/3] Starting User FIPA agent...
 start "DALI User Agent" /B "" "%prolog%" --noinfo -l "%dali_home%\active_user_wi.pl" --goal utente.
 %WAIT% >nul
 
-REM 3. Start F1 car agents
-echo [3/3] Starting F1 car agents...
-FOR /F "tokens=*" %%G IN ('dir /b mas\*.txt') DO (
-    echo   Activating agent: %%~nG
-    call conf\makeconf %%~nG %%G
-    call conf\startagent %%G "%prolog%" "%dali_home%"
-    %WAIT% >nul
+REM 3. Start semaphore FIRST so it is listening before the other agents send ready
+echo [3/3] Starting semaphore agent first...
+call conf\makeconf semaphore semaphore.txt
+call conf\startagent semaphore.txt "%prolog%" "%dali_home%"
+%WAIT% >nul
+
+REM Now start the remaining race agents (skip semaphore — already running)
+echo   Starting remaining F1 race agents...
+FOR /F "tokens=*" %%G IN ('dir /b conf\mas\*.txt') DO (
+    IF /I NOT "%%~nG"=="semaphore" (
+        echo   Activating agent: %%~nG
+        call conf\makeconf %%~nG %%G
+        call conf\startagent %%G "%prolog%" "%dali_home%"
+        %WAIT% >nul
+    )
 )
 
 echo.
@@ -49,11 +59,8 @@ echo ============================================
 echo   F1 Race MAS is running!
 echo ============================================
 echo.
-echo HOW TO START THE RACE:
-echo   In the User Agent window, type:
-echo     ferrari.
-echo     user.
-echo     send_message(start_race, user).
+echo The race starts AUTOMATICALLY once all agents signal they are ready.
+echo The Semaphore agent collects ready signals, shows the lights sequence and fires start_race.
 echo.
 echo HOW TO SHUTDOWN:
 echo   Close all SICStus windows or run:  taskkill /IM spwin.exe /F

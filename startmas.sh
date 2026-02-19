@@ -104,6 +104,7 @@ fi
 # Clean directories
 rm -rf build/*
 rm -f work/*  # Remove agent history
+mkdir -p work/log  # Agents open log/ relative to work/ — must exist before launch
 rm -rf conf/mas/*
 
 # Convert all txt files to Unix line endings (fixes Windows CRLF issue)
@@ -146,10 +147,17 @@ tmux new-window -t f1_race -n "user" "$PROLOG --noinfo -l $DALI_HOME/active_user
 echo "Launching agents instances..."
 $WAIT  # Let the user agent initialise before launching real agents
 
-# Launch agents in new windows, one after the other
+# ── Start semaphore FIRST so it is listening before the other agents send ready ──
+echo "Starting semaphore agent first..."
+$current_dir/conf/makeconf.sh semaphore.txt $DALI_HOME
+tmux new-window -t f1_race -n "semaphore" "$current_dir/conf/startagent.sh semaphore.txt $PROLOG $DALI_HOME"
+$WAIT  # Give it time to fully initialise before the race agents start
+
+# ── Launch the remaining agents (skip semaphore — already started) ────────────
 for agent_filename in $BUILD_HOME/*; do
     agent_base="${agent_filename##*/}"
     agent_name="${agent_base%.*}"   # strip .txt for window name
+    [ "$agent_name" = "semaphore" ] && continue   # already started above
     echo "Agent: $agent_base"
     # Create the agent configuration
     $current_dir/conf/makeconf.sh $agent_base $DALI_HOME

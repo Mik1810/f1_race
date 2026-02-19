@@ -5,10 +5,10 @@ body {
   color: #ccc;
   font-family: 'Courier New', Courier, monospace;
   font-size: 12px;
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 /* ── Header ──────────────────────────────────────────── */
@@ -47,12 +47,10 @@ header h1   { font-size: 13px; color: #fff; white-space: nowrap; }
 .grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(2, 1fr);
-  flex: 1;
+  grid-auto-rows: minmax(300px, 320px);
   gap: 3px;
   padding: 3px;
-  overflow: hidden;
-  min-height: 0;
+  overflow: visible;
 }
 .pane {
   display: flex;
@@ -60,7 +58,7 @@ header h1   { font-size: 13px; color: #fff; white-space: nowrap; }
   border-radius: 5px;
   border: 1px solid #222;
   overflow: hidden;
-  min-height: 0;
+  min-height: 260px;
 }
 .pane-hdr {
   padding: 3px 7px;
@@ -79,14 +77,16 @@ header h1   { font-size: 13px; color: #fff; white-space: nowrap; }
   gap: 6px;
 }
 .pane-btn {
-  font-size: 9px;
+  font-size: 11px;
   cursor: pointer;
-  opacity: .45;
+  opacity: .75;
+  color: inherit;
   user-select: none;
-  transition: opacity .15s;
+  transition: opacity .15s, color .15s;
   line-height: 1;
 }
-.pane-btn:hover { opacity: 1; }
+.pane-btn:hover { opacity: 1; filter: brightness(1.4); }
+.pane-btn.active { opacity: 1; filter: brightness(1.6); }
 
 .pane-body {
   flex: 1;
@@ -97,10 +97,40 @@ header h1   { font-size: 13px; color: #fff; white-space: nowrap; }
   word-break: break-word;
   font-size: 11px;
   line-height: 1.45;
-  min-height: 0;
 }
 .pane-body::-webkit-scrollbar { width: 3px; }
 .pane-body::-webkit-scrollbar-thumb { background: #2c2c2c; }
+
+/* ── Minimized tray ─────────────────────────────────── */
+#minimized-tray {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 4px 6px;
+  border-bottom: 1px solid #1a1a1a;
+  background: #101010;
+}
+#minimized-tray:empty { display: none; }
+
+.mini-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px;
+  border-radius: 12px;
+  border: 1px solid;
+  font-size: 9px;
+  font-weight: bold;
+  letter-spacing: .7px;
+  text-transform: uppercase;
+  cursor: pointer;
+  opacity: .85;
+  transition: opacity .15s, filter .15s;
+  font-family: inherit;
+  background: transparent;
+}
+.mini-chip:hover { opacity: 1; filter: brightness(1.4); }
+.mini-chip::before { content: '\25B2'; font-size: 7px; opacity: .7; }
 
 /* ── Command bar ─────────────────────────────────────── */
 .cmdbar {

@@ -9,6 +9,7 @@ Four reactive agents communicate through the LINDA blackboard. The **Pit Wall** 
 
 | Agent | Instance | Type | Ruolo |
 |-------|----------|------|-------|
+| `semaphore` | `mas/instances/semaphore.txt` | `semaphoreType` | Raccoglie i segnali `ready`, esegue la sequenza luci F1 e avvia la gara |
 | `ferrari` | `mas/instances/ferrari.txt` | `ferrariCar` | Auto Ferrari SF-24 |
 | `mclaren` | `mas/instances/mclaren.txt` | `mclarenCar` | Auto McLaren MCL38 |
 | `pitwall` | `mas/instances/pitwall.txt` | `pitWallType` | Muretto box, coordinatore e generatore di eventi casuali |
@@ -17,7 +18,11 @@ Four reactive agents communicate through the LINDA blackboard. The **Pit Wall** 
 ### Race flow (event chain — gara normale)
 
 ```
-User ──send_message(start_race)──► Ferrari
+All agents ──send_message(ready)──► Semaphore
+                                        │ (waits 4/4)
+                                        │ send_message(start_race)
+                                        ▼
+                                    Ferrari
                                        │ lap1_ferrari
                                        ▼
                                     Pitwall ──[50% Safety Car!]──► Safety Car
@@ -87,15 +92,13 @@ Use the toolbar buttons to control the race — no tmux scrolling needed.
 
 ### 3 — Start the Race
 
-Click **▶ Start Race** in the dashboard header, or in the User Console pane type:
+The race starts **automatically**. As each agent initialises, it sends a `ready` message
+to the `semaphore` agent. Once all 4 agents (ferrari, mclaren, pitwall, safety_car)
+have reported ready, the semaphore runs the F1 lights sequence (5 lights on, 2 s pause,
+lights out) and then fires `start_race` automatically.
 
-```prolog
-ferrari.
-user.
-send_message(start_race, user).
-```
-
-The race runs automatically. The pit wall randomly triggers the safety car (50% chance) after lap 1, and rain warnings (30% chance) after lap 2.
+The dashboard's **▶ Start Race** button and the manual console command are kept for
+debugging purposes, but are no longer required in normal operation.
 
 ---
 
@@ -131,11 +134,13 @@ f1_race/
 │   └── requirements.txt # pip: flask
 ├── mas/
 │   ├── instances/
+│   │   ├── semaphore.txt    # → semaphoreType
 │   │   ├── ferrari.txt      # → ferrariCar
 │   │   ├── mclaren.txt      # → mclarenCar
 │   │   ├── pitwall.txt      # → pitWallType
 │   │   └── safety_car.txt   # → safetyCarType
 │   └── types/
+│       ├── semaphoreType.txt   # Sequenza luci F1, poi lancia start_race
 │       ├── ferrariCar.txt   # Ferrari DALI logic
 │       ├── mclarenCar.txt   # McLaren DALI logic
 │       ├── pitWallType.txt  # Pit wall coordinator + random event generator
