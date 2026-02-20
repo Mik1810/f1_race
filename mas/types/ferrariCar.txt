@@ -1,14 +1,51 @@
-:- write('Ferrari SF-24 ready.'), send_m(semaphore, send_message(ready, ferrari)).
+:- write('[Ferrari] SF-24 ready on the grid.'), send_m(semaphore, send_message(ready, ferrari)).
+:- dynamic race_started/0.
+:- dynamic race_over/0.
+:- dynamic engine_failure_ferrari_fired/0.
 
-start_raceE:> write('Ferrari LAP 1: LIGHTS OUT AND AWAY WE GO!'), messageA(pitwall, send_message(lap1_ferrari, ferrari)).
+start_raceE:>
+    assert(race_started),
+    write('[Ferrari] LAP 1 -- LIGHTS OUT! Leclerc launches off the line!'),
+    messageA(pitwall, send_message(lap_done_ferrari, ferrari)).
 
-box_ferrariE:> write('Ferrari: BOX BOX BOX! Pitting for fresh tires.'), messageA(pitwall, send_message(ferrari_pitted, ferrari)).
+lap_go_ferrariE:>
+    write('[Ferrari] On the power! Leclerc attacking every sector.'),
+    messageA(pitwall, send_message(lap_done_ferrari, ferrari)).
 
-lap3_startE:> write('Ferrari LAP 3: Back on track pushing hard!'), messageA(pitwall, send_message(lap3_ferrari, ferrari)).
+box_ferrariE:>
+    write('[Ferrari] BOX BOX BOX! Ferrari dives into the pits.'),
+    messageA(pitwall, send_message(pit_done_ferrari, ferrari)).
 
-final_lapE:> write('Ferrari FINAL LAP: Defending P1! FORZA FERRARI!'), messageA(pitwall, send_message(finish_ferrari, ferrari)).
+rain_warningE:>
+    write('[Ferrari] RAIN WARNING. Leclerc switching to intermediate tyres.'), nl.
 
-rain_warningE:> write('Ferrari: Rain detected! Switching to intermediate tires!').
+safety_car_deployedE:>
+    write('[Ferrari] Safety car deployed. Leclerc on delta time.'), nl.
 
-safety_car_deployedE:> write('Ferrari: Safety car on track. Reducing speed.').
+retire_ferrariE:>
+    write('[Ferrari] *** LECLERC PARKS THE CAR. Ferrari is out of the race. ***').
 
+race_endE:>
+    assert(race_over).
+
+engine_failure_ferrari :-
+    race_started,
+    \+ race_over,
+    \+ engine_failure_ferrari_fired,
+    random(0, 1000, R),
+    R < 2.
+
+engine_failure_ferrariI:>
+    assert(engine_failure_ferrari_fired),
+    write('[Ferrari] *** ENGINE FAILURE -- Critical power loss! Leclerc slowing drastically! ***'),
+    send_m(pitwall, send_message(ferrari_engine_failure, ferrari)).
+
+push_lap_ferrari :-
+    race_started,
+    \+ race_over,
+    random(0, 100, R),
+    R < 10.
+
+push_lap_ferrariI:>
+    write('[Ferrari] PUSH LAP! Leclerc going flat out -- setting fastest sectors!'),
+    send_m(pitwall, send_message(ferrari_push_lap, ferrari)).

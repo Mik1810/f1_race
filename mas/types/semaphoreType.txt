@@ -1,25 +1,25 @@
 :- write('Semaphore: Waiting for all F1 agents to be ready...'), nl.
 :- dynamic ready_count/1.
-:- assert(ready_count(0)).
+:- if(clause(ready_count(_), _), true, assert(ready_count(0))).
 
 lights_sequence :-
     write('Semaphore: =========================================='), nl,
     write('Semaphore: F1 RACE START SEQUENCE INITIATED'), nl,
     write('Semaphore: =========================================='), nl,
-    sleep(1),
-    write('Semaphore:  (O) ( ) ( ) ( ) ( )  -- light 1'), nl,
-    sleep(1),
-    write('Semaphore:  (O) (O) ( ) ( ) ( )  -- light 2'), nl,
-    sleep(1),
-    write('Semaphore:  (O) (O) (O) ( ) ( )  -- light 3'), nl,
-    sleep(1),
-    write('Semaphore:  (O) (O) (O) (O) ( )  -- light 4'), nl,
-    sleep(1),
-    write('Semaphore:  (O) (O) (O) (O) (O)  -- light 5'), nl,
-    sleep(2),
-    write('Semaphore:  *** LIGHTS OUT! ***'), nl,
+    sleep(1), write('Semaphore:  (O) ( ) ( ) ( ) ( )  -- light 1'), nl,
+    sleep(1), write('Semaphore:  (O) (O) ( ) ( ) ( )  -- light 2'), nl,
+    sleep(1), write('Semaphore:  (O) (O) (O) ( ) ( )  -- light 3'), nl,
+    sleep(1), write('Semaphore:  (O) (O) (O) (O) ( )  -- light 4'), nl,
+    sleep(1), write('Semaphore:  (O) (O) (O) (O) (O)  -- light 5'), nl,
+    sleep(2), write('Semaphore:  *** LIGHTS OUT! ***'), nl,
     write('Semaphore:  ( ) ( ) ( ) ( ) ( )  -- GO GO GO!'), nl,
     write('Semaphore: =========================================='), nl,
     send_m(ferrari, send_message(start_race, semaphore)).
 
-readyE:> retract(ready_count(N)), N1 is N + 1, assert(ready_count(N1)), write('Semaphore: '), write(N1), write('/4 agents ready.'), nl, if(N1 =:= 4, lights_sequence, true).
+readyE:>
+    retract(ready_count(N)),
+    retractall(ready_count(_)),
+    N1 is N + 1,
+    assert(ready_count(N1)),
+    write('Semaphore: '), write(N1), write('/4 agents ready.'), nl,
+    if(N1 =:= 4, lights_sequence, true).

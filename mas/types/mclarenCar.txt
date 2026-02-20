@@ -1,12 +1,47 @@
-:- write('McLaren MCL38 ready.'), send_m(semaphore, send_message(ready, mclaren)).
+:- write('[McLaren] MCL38 ready on the grid.'), send_m(semaphore, send_message(ready, mclaren)).
+:- dynamic race_started/0.
+:- dynamic race_over/0.
+:- dynamic engine_failure_mclaren_fired/0.
 
-lap1_startE:> write('McLaren LAP 2: Ferrari done lap 1. Norris pushing hard!'), messageA(pitwall, send_message(lap2_mclaren, mclaren)).
+lap_go_mclarenE:>
+    if(\+ race_started, assert(race_started), true),
+    write('[McLaren] On the power! Norris pushing through every sector.'),
+    messageA(pitwall, send_message(lap_done_mclaren, mclaren)).
 
-box_mclarenE:> write('McLaren: BOX BOX BOX! Pitting.'), messageA(pitwall, send_message(mclaren_pitted, mclaren)).
+box_mclarenE:>
+    write('[McLaren] BOX BOX BOX! McLaren dives into the pits.'),
+    messageA(pitwall, send_message(pit_done_mclaren, mclaren)).
 
-lap4_startE:> write('McLaren LAP 4: On fresh tires attacking Ferrari!'), messageA(pitwall, send_message(lap4_mclaren, mclaren)).
+rain_warningE:>
+    write('[McLaren] RAIN WARNING. Norris switching to intermediate tyres.'), nl.
 
-rain_warningE:> write('McLaren: Rain! Norris switching to intermediates!').
+safety_car_deployedE:>
+    write('[McLaren] Safety car deployed. Norris conserving tyres.'), nl.
 
-safety_car_deployedE:> write('McLaren: Safety car deployed. Closing the gap to Ferrari.').
+retire_mclarenE:>
+    write('[McLaren] *** NORRIS PARKS THE CAR. McLaren is out of the race. ***').
 
+race_endE:>
+    assert(race_over).
+
+engine_failure_mclaren :-
+    race_started,
+    \+ race_over,
+    \+ engine_failure_mclaren_fired,
+    random(0, 1000, R),
+    R < 2.
+
+engine_failure_mclarenI:>
+    assert(engine_failure_mclaren_fired),
+    write('[McLaren] *** ENGINE FAILURE -- Temperature critical! Norris slowing! ***'),
+    send_m(pitwall, send_message(mclaren_engine_failure, mclaren)).
+
+push_lap_mclaren :-
+    race_started,
+    \+ race_over,
+    random(0, 100, R),
+    R < 10.
+
+push_lap_mclarenI:>
+    write('[McLaren] PUSH LAP! Norris absolutely flying -- fastest sectors!'),
+    send_m(pitwall, send_message(mclaren_push_lap, mclaren)).

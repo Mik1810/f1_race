@@ -15,51 +15,68 @@ Four reactive agents communicate through the LINDA blackboard. The **Pit Wall** 
 | `pitwall` | `mas/instances/pitwall.txt` | `pitWallType` | Muretto box, coordinatore e generatore di eventi casuali |
 | `safety_car` | `mas/instances/safety_car.txt` | `safetyCarType` | Safety car |
 
-### Race flow (event chain — gara normale)
+### Race flow (5 laps, alternating turns)
 
 ```
 All agents ──send_message(ready)──► Semaphore
-                                        │ (waits 4/4)
+                                        │ (waits 4/4 ready signals)
                                         │ send_message(start_race)
                                         ▼
-                                    Ferrari
-                                       │ lap1_ferrari
-                                       ▼
-                                    Pitwall ──[50% Safety Car!]──► Safety Car
-                                       │ lap1_start                    │ deploy → Ferrari + McLaren
-                                       ▼                               ▼
-                                    McLaren                    Ferrari/McLaren slow down
-                                       │ lap2_mclaren
-                                       ▼
-                                    Pitwall ──[30% RAIN!]──► Ferrari + McLaren (rain_warning)
-                                       │ lap3_start
-                                       ▼
-                                    Ferrari
-                                       │ lap3_ferrari
-                                       ▼
-                                    Pitwall ──lap4_start──► McLaren
-                                                                │ lap4_mclaren
-                                                                ▼
-                                    Pitwall ──final_lap──► Ferrari
-                                                                │ finish_ferrari
-                                                                ▼
-                                    Pitwall  ✓ RACE OVER! Ferrari P1!
+                                    Ferrari  ── lap_done_ferrari ──►  PitWall
+                                                                          │ rolls random lap time
+                                                                          │ lap_go_mclaren
+                                                                          ▼
+                                                                      McLaren  ── lap_done_mclaren ──►  PitWall
+                                                                                                            │ rolls random lap time
+                                                                                                            │ random_track_event (SC / Rain / clear)
+                                                                                                            │ prints standings
+                                                                                                            │ if lap < 5: lap_go_ferrari
+                                                                                                            │ if lap = 5: declare_winner
+                                                                                                            ▼
+                                                                                                        ...repeat 5 times...
 ```
 
-### Probabilistic Events (automatic, no user needed)
+At any point a car's **internal event** (`engine_failureI` or `push_lapI`) can fire autonomously and send a message to PitWall, interrupting the normal flow.
 
-| Trigger | Probability | Effect |
-|---|---|---|
-| After lap 1 (ferrari reports to pitwall) | **50%** | Safety car deployed — SC notifies Ferrari + McLaren |
-| After lap 2 (mclaren reports to pitwall) | **30%** | Heavy rain — both cars receive `rain_warning` |
+---
 
-These are implemented in `pitWallType.txt` using SICStus `random/3`:
+### Scoring system (lower total = winner)
+
+| Event | Score change |
+|---|---|
+| Each lap | `+ random(1..10)` |
+| Pit stop | `+ 5` |
+| Safety car | `+ 2` per car |
+| Heavy rain | `+ 1` per car |
+| Push lap (internal event, 10% chance) | `- 3` |
+| Engine failure / DNF (internal event, 5% chance) | `+ 50` → race ends immediately |
+
+---
+
+### DALI event types used
+
+**External events** (`nameE:>`) — reactive, triggered by a message from another agent:
+- `lap_done_ferrariE`, `lap_done_mclarenE` — car finishes a lap
+- `pit_done_ferrariE`, `pit_done_mclarenE` — car finishes a pit stop
+- `ferrari_engine_failureE`, `mclaren_engine_failureE` — DNF notification from car
+- `ferrari_push_lapE`, `mclaren_push_lapE` — fastest-lap bonus from car
+
+**Internal events** (`nameI:>`) — proactive, fire when a condition becomes true (checked every ~3 s):
 ```prolog
-lap1_ferrariE:> ..., random(0, 10, R1), if(R1 < 5, send_m(safety_car, send_message(deploy, pitwall)), true), messageA(mclaren, ...).
-```
-`send_m/2` is the internal DALI send predicate — safe to use inside `if/3` unlike `messageA`.
+% In ferrariCar.txt / mclarenCar.txt
+engine_failure_ferrari :- random(0, 100, R), R < 5.   % 5% per cycle
+engine_failure_ferrariI:> send_m(pitwall, send_message(ferrari_engine_failure, ferrari)).
 
-Each agent reacts to incoming events and fires the next event through the pitwall, simulating a 5-lap race with automatic probabilistic incidents.
+push_lap_ferrari :- random(0, 100, R), R < 10.        % 10% per cycle
+push_lap_ferrariI:> send_m(pitwall, send_message(ferrari_push_lap, ferrari)).
+```
+
+**Non-determinism** — `random_track_event/0` in PitWall, rolled after every McLaren lap:
+```prolog
+random_track_event :-
+    random(0, 10, R),
+    if(R < 2, /* 20% SAFETY CAR */, if(R < 4, /* 20% RAIN */, /* 60% clear */)).
+```
 
 ---
 

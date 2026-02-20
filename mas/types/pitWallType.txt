@@ -1,15 +1,117 @@
-:- write('Pit Wall ready. Monitoring the race.'), send_m(semaphore, send_message(ready, pitwall)).
+:- write('[PitWall] Online.'), send_m(semaphore, send_message(ready, pitwall)).
+:- dynamic ferrari_time/1.
+:- dynamic mclaren_time/1.
+:- dynamic ferrari_dnf/0.
+:- dynamic mclaren_dnf/0.
+:- dynamic lap/1.
+:- dynamic race_over/0.
+:- assert(ferrari_time(0)).
+:- assert(mclaren_time(0)).
+:- assert(lap(0)).
 
-lap1_ferrariE:> write('PITWALL: Ferrari lap 1 done. McLaren your turn!'), random(0, 10, R1), if(R1 < 5, (write('PITWALL: SAFETY CAR DEPLOYED! Random event 50pc chance!'), send_m(safety_car, send_message(deploy, pitwall))), write('PITWALL: Race running clean, no safety car.')), messageA(mclaren, send_message(lap1_start, pitwall)).
+add_time(ferrari, D) :-
+    retract(ferrari_time(S)),
+    S1 is S + D,
+    assert(ferrari_time(S1)).
 
-lap2_mclarenE:> write('PITWALL: McLaren lap 2 done. Ferrari lap 3!'), random(0, 10, R2), if(R2 < 3, (write('PITWALL: HEAVY RAIN WARNING! Random event 30pc chance!'), send_m(ferrari, send_message(rain_warning, pitwall)), send_m(mclaren, send_message(rain_warning, pitwall))), write('PITWALL: Track conditions nominal.')), messageA(ferrari, send_message(lap3_start, pitwall)).
+add_time(mclaren, D) :-
+    retract(mclaren_time(S)),
+    S1 is S + D,
+    assert(mclaren_time(S1)).
 
-ferrari_pittedE:> write('PITWALL: Ferrari out of pits on fresh tires. Rejoin!'), messageA(ferrari, send_message(lap3_start, pitwall)).
+effective_time(ferrari, T) :- ferrari_dnf, !, T = 9999.
+effective_time(ferrari, T) :- ferrari_time(T).
+effective_time(mclaren, T) :- mclaren_dnf, !, T = 9999.
+effective_time(mclaren, T) :- mclaren_time(T).
 
-mclaren_pittedE:> write('PITWALL: McLaren out of pits on fresh tires. Rejoin!'), messageA(mclaren, send_message(lap4_start, pitwall)).
+random_track_event :-
+    random(0, 10, R),
+    if(R < 2,
+        (write('[Race Director] SAFETY CAR deployed. +10s to both.'), nl,
+         add_time(ferrari, 10), add_time(mclaren, 10),
+         send_m(safety_car, send_message(deploy, pitwall)),
+         send_m(ferrari, send_message(safety_car_deployed, pitwall)),
+         send_m(mclaren, send_message(safety_car_deployed, pitwall))),
+    if(R < 4,
+        (write('[Race Director] HEAVY RAIN. +5s to both.'), nl,
+         add_time(ferrari, 5), add_time(mclaren, 5),
+         send_m(ferrari, send_message(rain_warning, pitwall)),
+         send_m(mclaren, send_message(rain_warning, pitwall))),
+        write('[Race Director] Green flag.'))).
 
-lap3_ferrariE:> write('PITWALL: Ferrari lap 3 done. McLaren lap 4!'), messageA(mclaren, send_message(lap4_start, pitwall)).
+announce_winner(FT, MT) :-
+    FT < MT, !,
+    Gap is MT - FT,
+    write('[PitWall] P1: FERRARI!  Leclerc wins!'), nl,
+    write('[PitWall] P2: McLaren  +'), write(Gap), write('s'), nl.
 
-lap4_mclarenE:> write('PITWALL: McLaren lap 4 done. Ferrari final lap!'), messageA(ferrari, send_message(final_lap, pitwall)).
+announce_winner(FT, MT) :-
+    MT < FT, !,
+    Gap is FT - MT,
+    write('[PitWall] P1: McLAREN!  Norris wins!'), nl,
+    write('[PitWall] P2: Ferrari  +'), write(Gap), write('s'), nl.
 
-finish_ferrariE:> write('PITWALL: RACE OVER! Ferrari P1! McLaren P2! What a race!').
+announce_winner(_, _) :-
+    write('[PitWall] DEAD HEAT! Identical total time.'), nl.
+
+declare_winner :-
+    if(race_over, true,
+        (assert(race_over),
+         effective_time(ferrari, FT),
+         effective_time(mclaren, MT),
+         write('[PitWall] === CHEQUERED FLAG ==='), nl,
+         write('[PitWall] Ferrari total: '), write(FT), write('s'), nl,
+         write('[PitWall] McLaren total: '), write(MT), write('s'), nl,
+         announce_winner(FT, MT),
+         send_m(ferrari, send_message(race_end, pitwall)),
+         send_m(mclaren, send_message(race_end, pitwall)))).
+
+lap_done_ferrariE:>
+    if(race_over, true,
+        (random(60, 91, T),
+         add_time(ferrari, T),
+         write('[PitWall] Ferrari lap: '), write(T), write('s'), nl,
+         messageA(mclaren, send_message(lap_go_mclaren, pitwall)))).
+
+lap_done_mclarenE:>
+    if(race_over, true,
+        (random(60, 91, T),
+         add_time(mclaren, T),
+         retract(lap(N)), N1 is N + 1, assert(lap(N1)),
+         write('[PitWall] McLaren lap: '), write(T), write('s'), nl,
+         write('[PitWall] Lap '), write(N1), write(' -- Ferrari: '), ferrari_time(FT), write(FT), write('s | McLaren: '), mclaren_time(MT), write(MT), write('s'), nl,
+         random_track_event,
+         if(N1 =:= 5, declare_winner,
+             messageA(ferrari, send_message(lap_go_ferrari, pitwall))))).
+
+pit_done_ferrariE:>
+    if(race_over, true,
+        (add_time(ferrari, 25),
+         write('[PitWall] Ferrari pit stop +25s.'), nl,
+         messageA(mclaren, send_message(lap_go_mclaren, pitwall)))).
+
+pit_done_mclarenE:>
+    if(race_over, true,
+        (add_time(mclaren, 25),
+         retract(lap(N)), N1 is N + 1, assert(lap(N1)),
+         write('[PitWall] McLaren pit stop +25s. Lap '), write(N1), nl,
+         if(N1 =:= 5, declare_winner,
+             messageA(ferrari, send_message(lap_go_ferrari, pitwall))))).
+
+ferrari_engine_failureE:>
+    assert(ferrari_dnf),
+    write('[PitWall] Ferrari DNF. Leclerc is out.'), nl,
+    send_m(ferrari, send_message(retire_ferrari, pitwall)),
+    declare_winner.
+
+mclaren_engine_failureE:>
+    assert(mclaren_dnf),
+    write('[PitWall] McLaren DNF. Norris is out.'), nl,
+    send_m(mclaren, send_message(retire_mclaren, pitwall)),
+    declare_winner.
+
+ferrari_push_lapE:>
+    if(race_over, true, (add_time(ferrari, -3), write('[PitWall] Ferrari fastest lap! -3s'), nl)).
+
+mclaren_push_lapE:>
+    if(race_over, true, (add_time(mclaren, -3), write('[PitWall] McLaren fastest lap! -3s'), nl)).
