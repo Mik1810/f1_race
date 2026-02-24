@@ -1,0 +1,28 @@
+# Exclude files that don't need to be sent to the Docker build context.
+# The project tree is bind-mounted at runtime, so the build context only
+# needs to provide the Dockerfiles and ui/requirements.txt.
+
+# Generated / runtime artefacts
+build/
+work/
+mas/instances/*.txt
+mas/types/*.txt
+log/
+conf/mas/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+*.installed_stamp
+
+# Editor / OS artefacts
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore

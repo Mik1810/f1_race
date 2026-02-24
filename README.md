@@ -79,6 +79,7 @@ At any point a car's **internal event** (`engine_failureI` or `push_lapI`) can f
 - `{id}_push_lapE` — fastest-lap bonus; subtracts 3s
 - `race_endE` — sent by pitwall after `declare_winner`; asserts local `race_over` to stop internal events
 - `rain_warningE`, `safety_car_deployedE` — cosmetic notifications to cars *(guarded: silently ignored if `race_over`)*
+- `green_flagE` — sent by pitwall when safety car is recalled; car reacts with a push message
 - `retire_{id}E` — car parks; cosmetic notification
 
 **Internal events** (`nameI:>`) — proactive, fire autonomously when condition is true:
@@ -103,11 +104,25 @@ push_lap_{id}I:>
     send_m(pitwall, send_message({id}_push_lap, {id})).
 ```
 
-**Non-determinism** — `random_track_event/0` in PitWall, rolled mid-race (never on last lap):
+**Non-determinism** — `random_track_event/0` in PitWall, rolled mid-race (never on last lap, at most once per lap via `track_event_this_lap` flag):
 ```prolog
 random_track_event :-
-    random(0, 10, R),
-    if(R < 2, /* 20% SAFETY CAR +10s */, if(R < 4, /* 20% RAIN +5s */, /* 60% clear */)).
+    if(track_event_this_lap, true,           % at most one event per lap
+        (random(0, 10, R),
+         if(R < 2, /* 20% SAFETY CAR +10s */,
+         if(R < 4, /* 20% RAIN +5s */,
+            true)))).
+```
+
+**Safety car recall chain** — when the last car of a lap resets `track_event_this_lap`:
+```
+PitWall ──recall──► SafetyCar
+                        │ recallE: retract(sc_active), send sc_recalled → PitWall
+                        ▼
+                    PitWall sc_recalledE: "GREEN FLAG!" + send green_flag → all cars
+                        │
+                        ▼
+                    Car green_flagE: driver reaction message
 ```
 
 ---
@@ -179,6 +194,7 @@ bash ui/run.sh
 ```
 
 `run.sh` creates a local Python venv (`ui/.venv`) on first run and installs Flask automatically.
+Subsequent launches skip pip install via a stamp file (`.venv/.installed_stamp`) — starts in ~1s.
 
 Then open **http://localhost:5000** in your browser.
 
@@ -207,6 +223,76 @@ The semaphore runs the F1 lights sequence (5 lights on → 2 s pause → lights 
 
 ---
 
+## Docker
+
+The project ships with a full **Docker Compose** setup: two containers sharing a tmux socket volume so the dashboard can read agent panes with zero code changes.
+
+### Architecture
+
+```
+┌─────────────────────────────────┐     ┌──────────────────────────────┐
+│  mas  (ubuntu:22.04)            │     │  ui  (python:3.11-slim)      │
+│  startmas.sh → tmux f1_race     │     │  dashboard.py (Flask :5000)  │
+│  SICStus mounted from host (ro) │     │  reads tmux panes via volume │
+└──────────────┬──────────────────┘     └──────────────┬───────────────┘
+               │  tmux_sock volume (/tmp/tmux-shared)  │
+               └───────────────────────────────────────┘
+```
+
+**Startup order** (managed by healthchecks):
+1. `ui` starts immediately → healthy once `/api/config` responds
+2. `mas` waits for `ui` healthy → launches `startmas.sh`
+
+### Quickstart
+
+```bash
+cd DALI/Examples/f1_race
+
+# 1. Auto-detect SICStus and write .env  (run once)
+bash docker/setup.sh
+
+# 2. Build and start
+docker compose up --build -d
+
+# 3. Open dashboard
+open http://localhost:5000
+```
+
+### Manual .env setup (not required if you run `docker/setup.sh`)
+
+```bash
+cp .env.example .env
+# Edit SICSTUS_PATH to point to your SICStus 4.6.0 install directory
+```
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SICSTUS_PATH` | `/usr/local/sicstus4.6.0` | Host path to SICStus install, mounted read-only into `mas` |
+
+### Files
+
+```
+f1_race/
+├── docker-compose.yml
+├── .env.example
+├── .dockerignore
+└── docker/
+    ├── setup.sh          # auto-detects SICStus → writes .env
+    ├── mas/Dockerfile    # ubuntu:22.04 + tmux + python3
+    └── ui/Dockerfile     # python:3.11-slim + tmux + curl + Flask
+```
+
+### Useful commands
+
+```bash
+docker compose up --build -d    # first run
+docker compose up               # subsequent runs (no rebuild)
+docker compose down             # stop and remove containers
+docker attach f1_mas            # attach to MAS terminal
+```
+
+---
+
 ## Shutdown
 
 ```bash
@@ -223,12 +309,19 @@ f1_race/
 ├── agents.json          # ← Single source of truth for all car agents
 ├── generate_agents.py   # ← Generates DALI files from agents.json
 ├── startmas.sh          # Launch script (calls generate_agents.py, then starts MAS)
+├── docker-compose.yml   # Docker Compose (mas + ui containers)
+├── .env.example         # Template for SICSTUS_PATH
+├── .dockerignore
+├── docker/
+│   ├── setup.sh         # Auto-detects SICStus, writes .env
+│   ├── mas/Dockerfile
+│   └── ui/Dockerfile
 ├── ui/
 │   ├── dashboard.py     # Flask backend — reads agents.json dynamically each request
 │   ├── static/
 │   │   ├── app.js       # Frontend — syncConfig() auto-detects agent changes every 5s
 │   │   └── index.html
-│   ├── run.sh           # Creates venv + launches dashboard
+│   ├── run.sh           # Creates venv + launches dashboard (stamp-based pip skip)
 │   └── requirements.txt
 ├── mas/
 │   ├── instances/

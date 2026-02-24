@@ -1,0 +1,70 @@
+# F1 DALI — Docker Compose
+# ─────────────────────────────────────────────────────────────────────────────
+# Prerequisites:
+#   1. Run:  bash docker/setup.sh      (auto-detects SICStus, creates .env)
+#      Or:  cp .env.example .env  and set SICSTUS_PATH manually.
+#   2. docker compose up --build -d
+#   3. Open http://localhost:5000
+#
+# How it works:
+#   • mas:  runs startmas.sh inside a container; tmux manages the DALI agents.
+#           Healthcheck: waits until tmux session 'f1_race' exists.
+#   • ui:   runs dashboard.py (Flask); only starts once mas is healthy.
+#           Healthcheck: polls /api/config until Flask responds.
+#   • tmux_sock volume: lets both containers share the same tmux socket
+#     (TMUX_TMPDIR — no code changes needed in startmas.sh or dashboard.py).
+#   • DALI tree is bind-mounted relative to this file — no absolute paths.
+#   • SICStus is mounted read-only from SICSTUS_PATH in .env.
+#     The licence stays on the host.
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  mas:
+    build:
+      context: ../..                          # DALI/ root
+      dockerfile: Examples/f1_race/docker/mas/Dockerfile
+    image: f1_dali_mas
+    container_name: f1_mas
+    hostname: f1-mas              # fixed hostname → server.txt always shows 'f1-mas':3010
+    stdin_open: true   # keep stdin open so tmux attach works interactively
+    tty: true
+    volumes:
+      - ../..:/dali                           # DALI/ → /dali (relative to this file)
+      - ${SICSTUS_PATH:-/usr/local/sicstus4.6.0}:/usr/local/sicstus4.6.0:ro
+      - tmux_sock:/tmp/tmux-shared
+    environment:
+      TMUX_TMPDIR: /tmp/tmux-shared
+    depends_on:
+      ui:
+        condition: service_healthy            # wait for Flask to be ready before launching the MAS
+    healthcheck:
+      # Healthy once startmas.sh has created the tmux session
+      test: ["CMD", "tmux", "-S", "/tmp/tmux-shared/default", "has-session", "-t", "f1_race"]
+      interval: 5s
+      timeout: 3s
+      retries: 20          # up to 100s for the full MAS startup sequence
+      start_period: 10s
+
+  ui:
+    build:
+      context: .                              # f1_race/
+      dockerfile: docker/ui/Dockerfile
+    image: f1_dali_ui
+    container_name: f1_ui
+    ports:
+      - "5000:5000"
+    volumes:
+      - ../..:/dali                           # same tree → agents.json always in sync
+      - tmux_sock:/tmp/tmux-shared
+    environment:
+      TMUX_TMPDIR: /tmp/tmux-shared
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:5000/api/config"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+volumes:
+  tmux_sock:   # ephemeral: destroyed when `docker compose down`
