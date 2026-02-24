@@ -30,6 +30,16 @@
   <button class="sbtn" onclick="doSend()">Send &#8629;</button>
 </div>
 
+<div id="lb-modal" class="lb-hidden">
+  <div class="lb-box">
+    <div class="lb-header">
+      <span>&#127942; Race Results</span>
+      <button class="pane-btn" onclick="closeLeaderboard()" title="Close">&#10005;</button>
+    </div>
+    <div id="lb-body"></div>
+  </div>
+</div>
+
 <div id="overlay">
   <div class="spinner"></div>
   <div id="overlay-msg">Restarting MAS…</div>

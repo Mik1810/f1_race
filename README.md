@@ -204,7 +204,6 @@ The semaphore runs the F1 lights sequence (5 lights on → 2 s pause → lights 
 | ↓ pin button | Toggle auto-scroll for that pane |
 | ✕ button | Clear pane output |
 | − button | Minimize pane to tray |
-| *(5 s background sync)* | Auto-detects added/removed cars from `agents.json`, rebuilds grid |
 
 ---
 

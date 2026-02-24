@@ -18,7 +18,9 @@ fetch('/api/config')
     buildGrid();
     buildAgentSelect();
     poll();
+    pollResults();
     setInterval(poll, 1000);
+    setInterval(pollResults, 3000); // check for final race results
     setInterval(syncConfig, 5000);  // re-check agents.json for added/removed cars
   })
   .catch(() => {
@@ -167,6 +169,8 @@ async function restartMas() {
   // Set restarting = true AFTER the await so the poll could not have
   // already cleared it while we were waiting for the response.
   clearAll();
+  closeLeaderboard();
+  lbShown = false;  // new race — allow results modal to appear again
   restarting = true;
   showOverlay('Waiting for agents…', 'LINDA server starting on port 3010');
 
@@ -270,6 +274,42 @@ function poll() {
         document.getElementById('lbl').textContent = 'session offline';
       }
     });
+}
+
+/* ── Leaderboard ─────────────────────────────────────── */
+const MEDALS = ['\uD83E\uDD47', '\uD83E\uDD48', '\uD83E\uDD49'];
+let lbShown = false;  // true once modal has been shown this race; reset on restart
+
+function pollResults() {
+  fetch('/api/results')
+    .then(r => r.json())
+    .then(data => { if (data.ready && !lbShown) { lbShown = true; renderLeaderboard(data.results); } })
+    .catch(() => {});
+}
+
+function renderLeaderboard(results) {
+  if (!results.length) return;
+  const rows = results.map(r => {
+    const medal = MEDALS[r.pos - 1] || 'P' + r.pos;
+    const timeCell = r.dnf
+      ? `<td class="lb-time lb-dnf">DNF</td>`
+      : `<td class="lb-time">${r.time}s</td>`;
+    return `<tr class="lb-row">
+      <td class="lb-pos">${medal}</td>
+      <td class="lb-bar"><div style="background:${r.border}"></div></td>
+      <td class="lb-team">${r.label}</td>
+      <td class="lb-driver">${r.driver}</td>
+      ${timeCell}
+      <td class="lb-pts">${r.dnf ? '' : r.points + ' pts'}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('lb-body').innerHTML =
+    `<table class="lb-table"><tbody>${rows}</tbody></table>`;
+  document.getElementById('lb-modal').classList.remove('lb-hidden');
+}
+
+function closeLeaderboard() {
+  document.getElementById('lb-modal').classList.add('lb-hidden');
 }
 
 /* ── Send helpers ─────────────────────────────────────── */

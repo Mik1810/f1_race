@@ -8,6 +8,7 @@ Usage:  bash ui/run.sh
 """
 
 import json
+import re
 import subprocess
 import argparse
 import os
@@ -119,6 +120,69 @@ def api_reload_config():
 @app.route("/api/panes")
 def api_panes():
     return jsonify({p["id"]: capture_pane(p["id"]) for p in current_panes()})
+
+
+@app.route("/api/results")
+def api_results():
+    """Parse the pitwall pane for final race results.
+    Returns {ready: bool, results: [{pos, id, driver, team, label, color, border, time, points, dnf}]}.
+    """
+    pane_text = capture_pane("pitwall")
+    if "=== FINAL RESULTS ===" not in pane_text:
+        return jsonify({"ready": False, "results": []})
+
+    # Official F1 points (P1..P10; 0 beyond P10 or DNF)
+    F1_POINTS = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1]
+
+    # Load car metadata from agents.json
+    agents_json = os.path.normpath(
+        os.path.join(os.path.dirname(__file__), "..", "agents.json")
+    )
+    cars_by_id: dict = {}
+    try:
+        with open(agents_json, encoding="utf-8") as f:
+            cfg = json.load(f)
+        cars_by_id = {c["id"]: c for c in cfg.get("cars", [])}
+    except Exception:
+        pass
+
+    # Parse lines after the FINAL RESULTS header
+    # Format: [PitWall] P1: ferrari -- 389s   or   [PitWall] P1: ferrari -- DNF
+    section = pane_text[pane_text.index("=== FINAL RESULTS ==="):]
+    results = []
+    for m in re.finditer(r'\[PitWall\] P(\d+): (\w+) -- ([\w]+)', section):
+        pos      = int(m.group(1))
+        cid      = m.group(2)
+        time_raw = m.group(3).rstrip('s')   # strip trailing 's' (e.g. "347s" → "347")
+        dnf      = time_raw == "DNF"
+        car      = cars_by_id.get(cid, {})
+
+        # Convert seconds → "m:ss" (e.g. 389 → "6:29")
+        if dnf:
+            time_fmt = "DNF"
+        else:
+            try:
+                total_s = int(time_raw)
+                time_fmt = f"{total_s // 60}:{total_s % 60:02d}"
+            except ValueError:
+                time_fmt = time_raw
+
+        points = 0 if dnf else (F1_POINTS[pos - 1] if pos <= len(F1_POINTS) else 0)
+
+        results.append({
+            "pos":    pos,
+            "id":     cid,
+            "driver": car.get("driver", cid),
+            "team":   car.get("team", cid),
+            "label":  car.get("label", cid),
+            "color":  car.get("color", "#111111"),
+            "border": car.get("border", "#888888"),
+            "time":   time_fmt,
+            "points": points,
+            "dnf":    dnf,
+        })
+    results.sort(key=lambda r: r["pos"])
+    return jsonify({"ready": bool(results), "results": results})
 
 
 @app.route("/api/send", methods=["POST"])
