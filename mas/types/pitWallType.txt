@@ -5,6 +5,7 @@
 :- dynamic mclaren_dnf/0.
 :- dynamic lap/1.
 :- dynamic race_over/0.
+:- dynamic track_event_this_lap/0.
 :- assert(ferrari_time(0)).
 :- assert(mclaren_time(0)).
 :- assert(lap(0)).
@@ -26,23 +27,26 @@ effective_time(mclaren, T) :- mclaren_dnf, !, T = 9999.
 effective_time(mclaren, T) :- mclaren_time(T).
 
 random_track_event :-
-    random(0, 10, R),
-    if(R < 2,
-        (write('[Race Director] SAFETY CAR deployed. +10s to all.'), nl,
-         add_time(ferrari, 10),
-         add_time(mclaren, 10),
-         send_m(safety_car, send_message(deploy, pitwall)),
-         send_m(ferrari, send_message(safety_car_deployed, pitwall)),
-         send_m(mclaren, send_message(safety_car_deployed, pitwall))
-        ),
-    if(R < 4,
-        (write('[Race Director] HEAVY RAIN. +5s to all.'), nl,
-         add_time(ferrari, 5),
-         add_time(mclaren, 5),
-         send_m(ferrari, send_message(rain_warning, pitwall)),
-         send_m(mclaren, send_message(rain_warning, pitwall))
-        ),
-        write('[Race Director] Green flag.'))). 
+    if(track_event_this_lap, true,
+        (random(0, 10, R),
+         if(R < 2,
+             (assert(track_event_this_lap),
+              write('[Race Director] SAFETY CAR deployed. +10s to all.'), nl,
+              add_time(ferrari, 10),
+              add_time(mclaren, 10),
+              send_m(safety_car, send_message(deploy, pitwall)),
+              send_m(ferrari, send_message(safety_car_deployed, pitwall)),
+              send_m(mclaren, send_message(safety_car_deployed, pitwall))
+             ),
+         if(R < 4,
+             (assert(track_event_this_lap),
+              write('[Race Director] HEAVY RAIN. +5s to all.'), nl,
+              add_time(ferrari, 5),
+              add_time(mclaren, 5),
+              send_m(ferrari, send_message(rain_warning, pitwall)),
+              send_m(mclaren, send_message(rain_warning, pitwall))
+             ),
+             write('[Race Director] Green flag.'))))). 
 
 announce_winner :-
     findall(T-Id, effective_time(Id, T), Pairs0),
@@ -87,6 +91,7 @@ lap_done_mclarenE:>
         (random(60, 91, T),
          add_time(mclaren, T),
          write('[PitWall] McLaren lap: '), write(T), write('s'), nl,
+         (track_event_this_lap -> retract(track_event_this_lap) ; true),
          retract(lap(N)), N1 is N + 1, assert(lap(N1)),
          write('[PitWall] Lap '), write(N1), write(' / 5'), nl,
          print_standings,

@@ -124,6 +124,7 @@ def gen_pitwall_type(cars: list, total_laps: int) -> str:
         L.append(f":- dynamic {c['id']}_dnf/0.")
     L.append(":- dynamic lap/1.")
     L.append(":- dynamic race_over/0.")
+    L.append(":- dynamic track_event_this_lap/0.")
     for c in cars:
         L.append(f":- assert({c['id']}_time(0)).")
     L.append(":- assert(lap(0)).")
@@ -154,25 +155,28 @@ def gen_pitwall_type(cars: list, total_laps: int) -> str:
     )
 
     L.append("random_track_event :-")
-    L.append("    random(0, 10, R),")
-    L.append("    if(R < 2,")
-    L.append("        (write('[Race Director] SAFETY CAR deployed. +10s to all.'), nl,")
+    L.append("    if(track_event_this_lap, true,")
+    L.append("        (random(0, 10, R),")
+    L.append("         if(R < 2,")
+    L.append("             (assert(track_event_this_lap),")
+    L.append("              write('[Race Director] SAFETY CAR deployed. +10s to all.'), nl,")
     for i in ids:
-        L.append(f"         add_time({i}, 10),")
-    L.append("         send_m(safety_car, send_message(deploy, pitwall)),")
+        L.append(f"              add_time({i}, 10),")
+    L.append("              send_m(safety_car, send_message(deploy, pitwall)),")
     for idx2, i in enumerate(ids):
         suffix = "" if idx2 == n - 1 else ","
-        L.append(f"         send_m({i}, send_message(safety_car_deployed, pitwall)){suffix}")
-    L.append("        ),")
-    L.append("    if(R < 4,")
-    L.append("        (write('[Race Director] HEAVY RAIN. +5s to all.'), nl,")
+        L.append(f"              send_m({i}, send_message(safety_car_deployed, pitwall)){suffix}")
+    L.append("             ),")
+    L.append("         if(R < 4,")
+    L.append("             (assert(track_event_this_lap),")
+    L.append("              write('[Race Director] HEAVY RAIN. +5s to all.'), nl,")
     for i in ids:
-        L.append(f"         add_time({i}, 5),")
+        L.append(f"              add_time({i}, 5),")
     for idx2, i in enumerate(ids):
         suffix = "" if idx2 == n - 1 else ","
-        L.append(f"         send_m({i}, send_message(rain_warning, pitwall)){suffix}")
-    L.append("        ),")
-    L.append("        write('[Race Director] Green flag.'))). ")
+        L.append(f"              send_m({i}, send_message(rain_warning, pitwall)){suffix}")
+    L.append("             ),")
+    L.append("             write('[Race Director] Green flag.'))))). ")
     L.append("")
 
     # announce_winner via findall + keysort (built-in in SICStus, no library needed)
@@ -231,6 +235,7 @@ def gen_pitwall_type(cars: list, total_laps: int) -> str:
         L.append(f"         add_time({i}, T),")
         L.append(f"         write('[PitWall] {tm} lap: '), write(T), write('s'), nl,")
         if is_last:
+            L.append(f"         (track_event_this_lap -> retract(track_event_this_lap) ; true),")
             L.append(f"         retract(lap(N)), N1 is N + 1, assert(lap(N1)),")
             L.append(f"         write('[PitWall] Lap '), write(N1), write(' / {total_laps}'), nl,")
             L.append(f"         print_standings,")
