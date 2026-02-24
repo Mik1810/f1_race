@@ -1,0 +1,554 @@
+\documentclass[12pt, a4paper]{article}
+
+% --- Encoding & language ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+
+% --- Layout ---
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{parskip}
+\usepackage{titlesec}
+\usepackage{enumitem}
+
+% --- Graphics & colors ---
+\usepackage{graphicx}
+\usepackage{xcolor}
+
+% --- Math ---
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+% --- Tables ---
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{longtable}
+
+% --- Code listings ---
+\usepackage{listings}
+
+\definecolor{codebg}{HTML}{F5F5F5}
+\definecolor{codeframe}{HTML}{CCCCCC}
+\definecolor{keywordcolor}{HTML}{0000AA}
+\definecolor{commentcolor}{HTML}{666666}
+\definecolor{stringcolor}{HTML}{AA0000}
+\definecolor{prologatom}{HTML}{007700}
+
+\lstdefinelanguage{Prolog}{
+  keywords={is, not, true, fail, assert, retract, asserta, assertz,
+            retractall, write, writeln, nl, if, random, findall,
+            forall, format, atom_concat, number_codes, atom_codes},
+  keywordstyle=\color{keywordcolor}\bfseries,
+  comment=[l]{\%},
+  commentstyle=\color{commentcolor}\itshape,
+  stringstyle=\color{stringcolor},
+  morestring=[b]',
+  morestring=[b]",
+  sensitive=false
+}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  rulecolor=\color{codeframe},
+  breaklines=true,
+  breakatwhitespace=false,
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  numbersep=8pt,
+  xleftmargin=15pt,
+  keywordstyle=\color{keywordcolor},
+  commentstyle=\color{commentcolor}\itshape,
+  stringstyle=\color{stringcolor},
+  showstringspaces=false,
+  tabsize=2
+}
+
+% --- Hyperlinks ---
+\usepackage[hidelinks, colorlinks=false]{hyperref}
+
+% ----------------------------------------------------------------
+% Title info
+% ----------------------------------------------------------------
+\title{%
+  \vspace{-1.5cm}
+  {\Large F1 Race}\\[0.4em]
+  {\large DALI Multi-Agent System --- Technical Documentation}
+}
+\author{Piccirilli Michael}
+\date{\today}
+
+% ================================================================
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+\begin{abstract}
+This document describes the design, architecture, and implementation of a Formula~1 race
+simulation built on top of the DALI Multi-Agent System framework. Car agents are
+dynamically generated from a single agents.json configuration file --- no
+agents are hardcoded in the codebase. A dedicated Pit-Wall agent coordinates the
+entire race flow and injects probabilistic track events (safety car deployment, heavy rain)
+at runtime. A real-time web dashboard provides live monitoring and manual control of the
+simulation.
+\end{abstract}
+
+\bigskip
+
+% ================================================================
+\section{Introduction}
+
+\subsection{DALI Overview}
+DALI (Dynamic Agent Logic framework for Interaction) is a logic-based multi-agent system
+built on top of SICStus Prolog. Each agent is defined by a set of \emph{external events}
+(reactions to incoming messages), \emph{internal events} (proactive behaviours triggered by
+conditions), and standard Prolog clauses for knowledge representation and reasoning.
+
+DALI agents run as independent SICStus processes that communicate via a shared message
+server running on a configurable TCP port (default: \texttt{3010}).
+
+\subsection{Project Goals}
+The F1 Race simulation was developed with the following goals in mind:
+\begin{itemize}[leftmargin=2em]
+  \item Demonstrate the \emph{reactive} and \emph{proactive} capabilities of DALI agents in
+        a realistic, event-driven scenario.
+  \item Show how a fully \emph{dynamic} agent roster can be maintained through code
+        generation, avoiding any hardcoded agent names in the DALI source.
+  \item Provide a real-time monitoring interface that reflects agent activity without
+        modifying the agent logic.
+  \item Package the entire stack as a reproducible \textbf{Docker Compose} application.
+\end{itemize}
+
+% ================================================================
+\section{System Requirements}
+
+\begin{longtable}{@{} l l @{}}
+\toprule
+\textbf{Component} & \textbf{Requirement} \\
+\midrule
+\endhead
+SICStus Prolog & 4.6.0 at \texttt{/usr/local/sicstus4.6.0} (Linux/WSL) \\
+Shell           & \texttt{bash}, \texttt{tmux} \\
+Python          & 3.8+ (for \texttt{generate\_agents.py} and dashboard) \\
+Flask           & Auto-installed in a local venv by \texttt{ui/run.sh} \\
+Docker          & Optional; required only for the Docker-based deployment \\
+\bottomrule
+\end{longtable}
+
+% ================================================================
+\section{Project Structure}
+
+\begin{lstlisting}[language={}, numbers=none, frame=none, backgroundcolor=\color{white}]
+f1_race/
++-- agents.json           <- Single source of truth for car agents
++-- generate_agents.py    <- Generates DALI files from agents.json
++-- startmas.sh           <- Launch script (Linux/WSL)
++-- startmas.bat          <- Launch script (Windows)
++-- docker-compose.yml    <- Docker Compose (mas + ui containers)
++-- .env.example          <- Template for SICSTUS_PATH
++-- docker/
+|   +-- setup.sh          <- Auto-detects SICStus, writes .env
+|   +-- mas/Dockerfile
+|   \-- ui/Dockerfile
++-- ui/
+|   +-- dashboard.py      <- Flask backend
+|   +-- run.sh            <- Creates venv + launches dashboard
+|   +-- requirements.txt
+|   \-- static/
+|       +-- app.js        <- Frontend (syncConfig every 5 s)
+|       \-- index.html
++-- mas/
+|   +-- instances/        <- Agent instance files
+|   \-- types/            <- Agent type (behaviour) files
++-- conf/                 <- DALI communication configuration
++-- build/                <- Runtime binaries (auto-generated)
++-- work/                 <- Runtime working files (auto-generated)
+\-- log/                  <- Agent logs (auto-generated)
+\end{lstlisting}
+
+% ================================================================
+\section{Agents}
+
+\subsection{Fixed Infrastructure Agents}
+
+The following agents are always present regardless of the car roster:
+
+\begin{longtable}{@{} l l l p{7cm} @{}}
+\toprule
+\textbf{Agent} & \textbf{Instance file} & \textbf{Type} & \textbf{Role} \\
+\midrule
+\endhead
+\texttt{semaphore}   & \texttt{instances/semaphore.txt}   & \texttt{semaphoreType}  & Collects \texttt{ready} signals, runs the F1 lights sequence, fires \texttt{start\_race} \\[4pt]
+\texttt{pitwall}     & \texttt{instances/pitwall.txt}     & \texttt{pitWallType}    & Race coordinator: manages lap order, lap times, standings, track events \\[4pt]
+\texttt{safety\_car} & \texttt{instances/safety\_car.txt} & \texttt{safetyCarType}  & Reacts to deploy/recall; forwards \texttt{sc\_recalled} and participates in the green-flag chain \\
+\bottomrule
+\end{longtable}
+
+\subsection{Car Agents (Dynamic)}
+
+Car agents are \emph{never hardcoded}. The entire roster is driven by
+\texttt{agents.json}. The default configuration defines four cars:
+
+\begin{longtable}{@{} l l l l @{}}
+\toprule
+\textbf{ID} & \textbf{Team} & \textbf{Driver} & \textbf{Car model} \\
+\midrule
+\endhead
+\texttt{ferrari}  & Ferrari  & Leclerc    & SF-24 \\
+\texttt{mclaren}  & McLaren  & Norris     & MCL38 \\
+\texttt{redbull}  & Red Bull & Verstappen & RB20  \\
+\texttt{mercedes} & Mercedes & Hamilton   & W15   \\
+\bottomrule
+\end{longtable}
+
+\noindent
+Each car entry in \texttt{agents.json} also carries UI metadata (\texttt{color},
+\texttt{border}, \texttt{label}) used by the dashboard.
+
+% ================================================================
+\section{Dynamic Agent System}
+
+\subsection{Code Generation Pipeline}
+
+The \texttt{generate\_agents.py} script is the single point of truth for all generated
+files:
+
+\begin{lstlisting}[language={}, numbers=none, frame=none, backgroundcolor=\color{white}]
+agents.json
+    +-> generate_agents.py
+          +-- mas/instances/{id}.txt       (one per car)
+          +-- mas/types/{id}Car.txt        (one per car)
+          +-- mas/types/pitWallType.txt    (round-robin over all cars)
+          +-- mas/types/semaphoreType.txt  (waits N_cars + 2 ready)
+          \-- mas/types/safetyCarType.txt
+\end{lstlisting}
+
+\noindent
+\texttt{generate\_agents.py} is invoked automatically at each MAS startup by
+\texttt{startmas.sh}. It is \emph{smart about regeneration}:
+
+\begin{longtable}{@{} l p{9cm} @{}}
+\toprule
+\textbf{Situation} & \textbf{Behaviour} \\
+\midrule
+\endhead
+\texttt{agents.json} unchanged & Skips regeneration --- no files written \\
+New car added                  & Full regeneration \\
+Car removed                    & Stale \texttt{\{id\}.txt} / \texttt{\{id\}Car.txt} deleted, then full regeneration \\
+\texttt{-{}-force} flag        & Always regenerates unconditionally \\
+\bottomrule
+\end{longtable}
+
+\subsection{Adding or Removing a Car}
+
+Edit \texttt{agents.json} and add a new entry to the \texttt{cars} array:
+
+\begin{lstlisting}[language={}]
+{
+  "total_laps": 5,
+  "cars": [
+    { "id": "ferrari",   "team": "Ferrari",  "car_model": "SF-24",
+      "driver": "Leclerc", "label": "Ferrari SF-24",
+      "color": "#180505", "border": "#cc2200" },
+    { "id": "myclubcar", "team": "My Club",  "car_model": "X1",
+      "driver": "Rossi",   "label": "Club X1",
+      "color": "#001020", "border": "#00aaff" }
+  ]
+}
+\end{lstlisting}
+
+\noindent
+Then run \texttt{bash startmas.sh}. All DALI files and the dashboard update automatically.
+
+% ================================================================
+\section{Race Flow}
+
+\subsection{Startup Sequence}
+
+\begin{enumerate}[leftmargin=2em]
+  \item Every agent (all cars, pit wall, safety car) sends a \texttt{ready} message to the
+        semaphore.
+  \item The semaphore waits until it has collected exactly $N_\text{cars} + 2$ ready signals.
+  \item The semaphore runs the F1 lights sequence (5 lights on, 1\,s each; 2\,s pause;
+        lights out) and sends \texttt{start\_race} to \texttt{Car[0]}.
+\end{enumerate}
+
+\subsection{Lap Round-Robin}
+
+Once the race starts, laps proceed in a strict round-robin over the ordered car list:
+
+\begin{enumerate}[leftmargin=2em]
+  \item \texttt{Car[i]} receives \texttt{lap\_go\_\{id\}} from the pit wall.
+  \item \texttt{Car[i]} asserts its lap status and sends \texttt{lap\_done\_\{id\}} to the
+        pit wall.
+  \item The pit wall adds a random lap time, optionally fires a track event, and sends
+        \texttt{lap\_go\_\{id+1\}} to the next car.
+  \item After the last car of a lap completes:
+        \begin{itemize}
+          \item Lap counter increments.
+          \item Standings are printed.
+          \item If laps remain: \texttt{random\_track\_event} is rolled, then \texttt{lap\_go}
+                is sent to \texttt{Car[0]}.
+          \item If race complete: \texttt{declare\_winner} is called and \texttt{race\_end}
+                is broadcast.
+        \end{itemize}
+\end{enumerate}
+
+\noindent
+At any point a car's \emph{internal events} (\texttt{engine\_failureI} or
+\texttt{push\_lapI}) can fire autonomously and notify the pit wall.
+
+% ================================================================
+\section{Timing System}
+
+The winner is the car with the lowest total accumulated time. Time is measured in seconds.
+
+\begin{longtable}{@{} l r @{}}
+\toprule
+\textbf{Event} & \textbf{Time change} \\
+\midrule
+\endhead
+Each lap      & $+\,\texttt{random}(60,\,90)$ seconds \\
+Pit stop      & $+\,25\,\text{s}$ \\
+Safety car (20\,\% per lap) & $+\,10\,\text{s}$ to \emph{all} cars \\
+Heavy rain (20\,\% per lap) & $+\,5\,\text{s}$ to \emph{all} cars \\
+Push lap (internal event, $\approx$10\,\%) & $-\,3\,\text{s}$ \\
+Engine failure / DNF ($\approx$0.2\,\%) & $\texttt{time} = 9999\,\text{s}$ (race ends) \\
+\bottomrule
+\end{longtable}
+
+% ================================================================
+\section{DALI Event Types}
+
+\subsection{External Events}
+
+External events (\texttt{nameE:>~Body.}) are reactive: they fire when a message named
+\texttt{name} arrives from another agent.
+
+\begin{longtable}{@{} l p{9cm} @{}}
+\toprule
+\textbf{Event} & \textbf{Description} \\
+\midrule
+\endhead
+\texttt{start\_raceE}             & Lights-out signal from semaphore; asserts \texttt{race\_started} \\
+\texttt{lap\_go\_\{id\}E}        & Pit wall tells car to start its next lap \\
+\texttt{lap\_done\_\{id\}E}      & Car finishes a lap; pit wall adds time, rolls track event \\
+\texttt{pit\_done\_\{id\}E}      & Car finishes pit stop; pit wall adds $+25\,\text{s}$ \\
+\texttt{\{id\}\_engine\_failureE} & DNF notification; sets effective time to 9999 \\
+\texttt{\{id\}\_push\_lapE}      & Fastest-lap bonus; subtracts $3\,\text{s}$ \\
+\texttt{race\_endE}              & Broadcast at end of race; asserts local \texttt{race\_over} \\
+\texttt{rain\_warningE}          & Cosmetic notification (ignored if \texttt{race\_over}) \\
+\texttt{safety\_car\_deployedE}  & Car receives safety-car notification \\
+\texttt{green\_flagE}            & Sent after safety car recalled; car reacts with a push message \\
+\texttt{retire\_\{id\}E}         & Car parks; cosmetic DNF notification \\
+\bottomrule
+\end{longtable}
+
+\subsection{Internal Events}
+
+Internal events (\texttt{nameI:>~Body.}) are proactive: they fire autonomously whenever
+the associated condition clause \texttt{name~:-~Cond.} succeeds.
+
+\begin{lstlisting}[language=Prolog, caption={Generated internal events (per-car)}]
+% Engine failure -- fires at most once, ~0.2% probability per cycle
+engine_failure_{id} :-
+    race_started,
+    \+ race_over,
+    \+ engine_failure_{id}_fired,
+    random(0, 1000, R), R < 2.
+
+engine_failure_{id}I:>
+    assert(engine_failure_{id}_fired),
+    send_m(pitwall, send_message({id}_engine_failure, {id})).
+
+
+% Push lap -- fires at most once per lap, ~10% probability
+push_lap_{id} :-
+    race_started,
+    \+ race_over,
+    \+ push_lap_{id}_fired,
+    random(0, 100, R), R < 10.
+
+push_lap_{id}I:>
+    assert(push_lap_{id}_fired),
+    send_m(pitwall, send_message({id}_push_lap, {id})).
+\end{lstlisting}
+
+\noindent
+The \texttt{push\_lap\_\{id\}\_fired} flag is retracted at the start of each new lap
+(\texttt{lap\_go} handler), so the event can fire once per lap.
+
+\subsection{Non-deterministic Track Events}
+
+The pit wall rolls \texttt{random\_track\_event/0} after each car completes a lap
+(never on the last lap, at most once per lap via the \texttt{track\_event\_this\_lap} flag):
+
+\begin{lstlisting}[language=Prolog, caption={random\_track\_event/0 in pitWallType}]
+random_track_event :-
+    if(track_event_this_lap,
+       true,
+       ( random(0, 10, R),
+         if(R < 2,
+            /* 20%: SAFETY CAR -- +10s to all cars */,
+         if(R < 4,
+            /* 20%: HEAVY RAIN -- +5s to all cars */,
+            true)) )).
+\end{lstlisting}
+
+\subsection{Safety Car Chain}
+
+The safety car involves a three-step message chain:
+
+\begin{enumerate}[leftmargin=2em]
+  \item Pit Wall detects \texttt{R < 2} $\Rightarrow$ asserts \texttt{track\_event\_this\_lap}, sends \texttt{deploy} to Safety Car and \texttt{safety\_car\_deployed} to all cars.
+  \item At end-of-lap the pit wall sends \texttt{recall} to Safety Car $\Rightarrow$ Safety Car retracts \texttt{sc\_active} and sends \texttt{sc\_recalled} back to pit wall.
+  \item Pit wall receives \texttt{sc\_recalled} $\Rightarrow$ prints ``GREEN FLAG!'' and sends \texttt{green\_flag} to all cars.
+\end{enumerate}
+
+% ================================================================
+\section{How to Run}
+
+\subsection{Native (WSL / Linux)}
+
+\begin{lstlisting}[language=bash, numbers=none]
+cd DALI/Examples/f1_race
+bash startmas.sh
+\end{lstlisting}
+
+\texttt{startmas.sh} performs the following steps:
+\begin{enumerate}[leftmargin=2em]
+  \item Kills any stale SICStus / tmux processes on port 3010.
+  \item Runs \texttt{generate\_agents.py} to sync DALI files with \texttt{agents.json}.
+  \item Builds agent binaries and launches all agents inside a single \texttt{tmux}
+        session named \texttt{f1\_race}.
+\end{enumerate}
+
+\subsection{Web Dashboard}
+
+In a second terminal:
+
+\begin{lstlisting}[language=bash, numbers=none]
+cd DALI/Examples/f1_race
+bash ui/run.sh
+\end{lstlisting}
+
+\noindent
+\texttt{run.sh} creates a local Python venv (\texttt{ui/.venv}) on the first run and
+installs Flask automatically. Subsequent launches skip \texttt{pip install} via a stamp
+file (\texttt{.venv/.installed\_stamp}) and start in approximately 1\,second.
+
+Open \url{http://localhost:5000} in a browser. The dashboard shows all agent panes
+side-by-side with real-time auto-scrolling. If \texttt{agents.json} is modified while the
+dashboard is open, it auto-detects the change within 5\,seconds and rebuilds the grid
+without a page reload.
+
+\subsection{Dashboard Controls}
+
+\begin{longtable}{@{} l p{9cm} @{}}
+\toprule
+\textbf{UI element} & \textbf{Function} \\
+\midrule
+\endhead
+\textbf{Restart MAS}    & Kills SICStus + tmux session, reruns \texttt{startmas.sh} \\
+\textbf{Deploy SC}      & Sends deploy message to safety car immediately \\
+\textbf{Recall SC}      & Recalls the safety car \\
+Agent / Command bar     & Sends an arbitrary Prolog command to any agent pane \\
+Pin button ($\downarrow$) & Toggles auto-scroll for that pane \\
+Clear button ($\times$)  & Clears pane output \\
+Minimise button ($-$)   & Minimises pane to tray \\
+\bottomrule
+\end{longtable}
+
+% ================================================================
+\section{Docker Deployment}
+
+\subsection{Architecture}
+
+The Docker Compose setup runs two containers that share a tmux socket volume, allowing
+the dashboard to read agent panes with zero modifications to the agent logic.
+
+\begin{lstlisting}[language={}, numbers=none, frame=none, backgroundcolor=\color{white}]
++----------------------------------+   +------------------------------+
+|  mas  (ubuntu:22.04)             |   |  ui  (python:3.11-slim)      |
+|  startmas.sh -> tmux f1_race     |   |  dashboard.py (Flask :5000)  |
+|  SICStus mounted from host (ro)  |   |  reads tmux panes via volume |
++----------------------------------+   +------------------------------+
+                 tmux_sock volume (/tmp/tmux-shared)
+\end{lstlisting}
+
+\noindent
+\textbf{Startup order} (managed by Docker healthchecks):
+\begin{enumerate}[leftmargin=2em]
+  \item \texttt{ui} starts immediately and is healthy once \texttt{/api/config} responds.
+  \item \texttt{mas} waits for \texttt{ui} to be healthy, then runs \texttt{startmas.sh}.
+\end{enumerate}
+
+\subsection{Quickstart}
+
+\begin{lstlisting}[language=bash, numbers=none]
+cd DALI/Examples/f1_race
+
+# 1. Auto-detect SICStus and write .env  (run once)
+bash docker/setup.sh
+
+# 2. Build and start
+docker compose up --build -d
+
+# 3. Open dashboard
+open http://localhost:5000
+\end{lstlisting}
+
+\subsection{Environment Variables}
+
+\begin{longtable}{@{} l l p{7cm} @{}}
+\toprule
+\textbf{Variable} & \textbf{Default} & \textbf{Description} \\
+\midrule
+\endhead
+\texttt{SICSTUS\_PATH} & \texttt{/usr/local/sicstus4.6.0} & Host path to SICStus install, mounted read-only into the \texttt{mas} container \\
+\bottomrule
+\end{longtable}
+
+% ================================================================
+\section{DALI Syntax Reference}
+
+The following table summarises all DALI syntax constructs used in this project.
+
+\begin{longtable}{@{} l p{5.5cm} p{5.5cm} @{}}
+\toprule
+\textbf{Syntax} & \textbf{Meaning} & \textbf{Example} \\
+\midrule
+\endhead
+\texttt{nameE:>~Body.}         & React to external event \texttt{name} & \texttt{start\_raceE:> write('Go!').} \\[4pt]
+\texttt{nameI:>~Body.}         & Fire internal event when \texttt{name} holds & \texttt{push\_lap\_ferrariI:> send\_m(...).} \\[4pt]
+\texttt{name :- Cond.}         & Condition for internal event \texttt{nameI} & \texttt{push\_lap\_ferrari :- race\_started, ...} \\[4pt]
+\texttt{messageA(ag,\,msg)}    & Send message (top-level clause) & \texttt{messageA(pitwall, lap\_done).} \\[4pt]
+\texttt{send\_m(ag,\,msg)}     & Send message (safe inside \texttt{if/3}) & \texttt{send\_m(safety\_car, deploy).} \\[4pt]
+\texttt{random(Lo,\,Hi,\,R)}   & Random integer $\texttt{Lo} \le R < \texttt{Hi}$ & \texttt{random(0, 10, R).} \\[4pt]
+\texttt{if(Cond,\,Then,\,Else)} & Conditional & \texttt{if(R < 5, act, true).} \\[4pt]
+\texttt{\textbackslash+~Goal}  & Negation-as-failure & \texttt{\textbackslash+ race\_over} \\[4pt]
+\texttt{:-~Goal.}              & Directive (runs at load time) & \texttt{:- write('Agent ready!').} \\[4pt]
+\texttt{keysort(+P,\,-S)}      & Sort \texttt{Key-Value} pairs by key & \texttt{keysort([3-b,\,1-a],\,S).} \\
+\bottomrule
+\end{longtable}
+
+% ================================================================
+\section{Shutdown}
+
+\begin{lstlisting}[language=bash, numbers=none]
+# Stop the MAS
+tmux kill-session -t f1_race
+
+# Stop the Flask dashboard
+# Ctrl+C in the dashboard terminal
+
+# Stop Docker
+docker compose down
+\end{lstlisting}
+
+\end{document}

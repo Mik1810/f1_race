@@ -6,11 +6,11 @@
 - [x] Fare in modo che la ui si crei in modo dinamico in base al numero di agenti presenti e non tenerli hardcodati nel backend (agents.json + generate_agents.py)
 - [x] Aggiungere un tabellone finale che faccia vedere il posizionamento dei vari piloti
 - [x] Green flag del racedirector parte spesso (togliere o modificare)
-- [ ] Fare il porting su Docker
+- [x] Fare il porting su Docker
 
 ### Times needed
 - [ ] Fare UI con grafica con circuito e macchine
-- [ ] Fare sequence diagrams
+- [x] Fare sequence diagrams
 - [ ] Fare documentazione
 - [ ] Ripulire le varie scritte degli eventi
 - [x] Velocizzare lo startmas

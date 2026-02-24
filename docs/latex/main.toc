@@ -1,0 +1,31 @@
+\babel@toc {english}{}\relax 
+\contentsline {section}{\numberline {1}Introduction}{3}{section.1}%
+\contentsline {subsection}{\numberline {1.1}DALI Overview}{3}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Project Goals}{3}{subsection.1.2}%
+\contentsline {section}{\numberline {2}System Requirements}{3}{section.2}%
+\contentsline {section}{\numberline {3}Project Structure}{4}{section.3}%
+\contentsline {section}{\numberline {4}Agents}{4}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Fixed Infrastructure Agents}{4}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Car Agents (Dynamic)}{5}{subsection.4.2}%
+\contentsline {section}{\numberline {5}Dynamic Agent System}{5}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Code Generation Pipeline}{5}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Adding or Removing a Car}{5}{subsection.5.2}%
+\contentsline {section}{\numberline {6}Race Flow}{6}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Startup Sequence}{6}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Lap Round-Robin}{6}{subsection.6.2}%
+\contentsline {section}{\numberline {7}Timing System}{6}{section.7}%
+\contentsline {section}{\numberline {8}DALI Event Types}{7}{section.8}%
+\contentsline {subsection}{\numberline {8.1}External Events}{7}{subsection.8.1}%
+\contentsline {subsection}{\numberline {8.2}Internal Events}{7}{subsection.8.2}%
+\contentsline {subsection}{\numberline {8.3}Non-deterministic Track Events}{8}{subsection.8.3}%
+\contentsline {subsection}{\numberline {8.4}Safety Car Chain}{8}{subsection.8.4}%
+\contentsline {section}{\numberline {9}How to Run}{8}{section.9}%
+\contentsline {subsection}{\numberline {9.1}Native (WSL / Linux)}{8}{subsection.9.1}%
+\contentsline {subsection}{\numberline {9.2}Web Dashboard}{9}{subsection.9.2}%
+\contentsline {subsection}{\numberline {9.3}Dashboard Controls}{9}{subsection.9.3}%
+\contentsline {section}{\numberline {10}Docker Deployment}{9}{section.10}%
+\contentsline {subsection}{\numberline {10.1}Architecture}{9}{subsection.10.1}%
+\contentsline {subsection}{\numberline {10.2}Quickstart}{10}{subsection.10.2}%
+\contentsline {subsection}{\numberline {10.3}Environment Variables}{10}{subsection.10.3}%
+\contentsline {section}{\numberline {11}DALI Syntax Reference}{10}{section.11}%
+\contentsline {section}{\numberline {12}Shutdown}{11}{section.12}%
