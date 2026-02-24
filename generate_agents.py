@@ -81,6 +81,10 @@ def gen_car_type(car: dict) -> str:
         f"retire_{i}E:>\n"
         f"    write('[{tm}] *** {drv.upper()} PARKS THE CAR. {tm} is out of the race. ***').\n"
         "\n"
+        f"green_flagE:>\n"
+        f"    if(race_over, true,\n"
+        f"        (write('[{tm}] GREEN FLAG! {drv} pushing flat out!'), nl)).\n"
+        "\n"
         f"race_endE:>\n"
         f"    assert(race_over).\n"
         "\n"
@@ -218,7 +222,13 @@ def gen_pitwall_type(cars: list, total_laps: int) -> str:
         suffix = "))." if idx2 == n - 1 else ","
         L.append(f"         send_m({i}, send_message(race_end, pitwall)){suffix}")
     L.append("")
-
+    # sc_recalled — green flag broadcast to all cars
+    L.append("sc_recalledE:>")
+    L.append("    write('[Race Director] GREEN FLAG! Track is clear.'), nl,")
+    for idx2, i in enumerate(ids):
+        suffix = "." if idx2 == n - 1 else ","
+        L.append(f"    send_m({i}, send_message(green_flag, pitwall)){suffix}")
+    L.append("")
     # ── lap_done events (round-robin) ─────────────────────────────────────────
     # car[idx] → triggers car[(idx+1) % n]
     # last car also increments lap counter and checks total_laps
@@ -342,7 +352,8 @@ def gen_safety_car_type(cars: list) -> str:
         "recallE:>",
         "    if(sc_active,",
         "        (retract(sc_active),",
-        "         write('SAFETY CAR: Green flag! Returning to pits.'), nl),",
+        "         write('SAFETY CAR: Returning to pits. Notifying race control.'), nl,",
+        "         send_m(pitwall, send_message(sc_recalled, safety_car))),",
         "        true).",
         "",
         "safety_car_inE:> write('SAFETY CAR: Received pit order. Returning to garage.'), nl.",

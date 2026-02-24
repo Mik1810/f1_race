@@ -28,7 +28,6 @@ MAIN_HOME=../..
 DALI_HOME=../../src
 CONF_DIR=conf
 PROLOG="$SICSTUS_HOME/bin/sicstus"
-WAIT="sleep 2"
 LINDA_PORT=3010
 INSTANCES_HOME=mas/instances
 TYPES_HOME=mas/types
@@ -139,6 +138,23 @@ done
 ls $BUILD_HOME
 cp $BUILD_HOME/*.txt work
 
+# Wait until a tmux pane has produced at least one line of output.
+# Usage: wait_for_pane <session:window> [timeout_seconds]
+# Falls back gracefully after timeout (default 10s).
+wait_for_pane() {
+    local target="$1"
+    local timeout="${2:-10}"
+    local elapsed=0
+    while [ "$elapsed" -lt "$timeout" ]; do
+        local content
+        content=$(tmux capture-pane -pt "$target" 2>/dev/null | tr -d '[:space:]')
+        [ -n "$content" ] && return 0
+        sleep 0.3
+        elapsed=$((elapsed + 1))
+    done
+    echo "WARNING: pane '$target' had no output after ${timeout}s — continuing anyway." >&2
+}
+
 # Start the LINDA server in a new console
 srvcmd="$PROLOG --noinfo -l $DALI_HOME/active_server_wi.pl --goal go(3010,'server.txt')."
 echo "server: " $srvcmd
@@ -161,13 +177,13 @@ done
 # Start user agent in a new window
 tmux new-window -t f1_race -n "user" "$PROLOG --noinfo -l $DALI_HOME/active_user_wi.pl --goal utente."
 echo "Launching agents instances..."
-$WAIT  # Let the user agent initialise before launching real agents
+wait_for_pane f1_race:user  # Let the user agent initialise before launching real agents
 
 # ── Start semaphore FIRST so it is listening before the other agents send ready ──
 echo "Starting semaphore agent first..."
 $current_dir/conf/makeconf.sh semaphore.txt $DALI_HOME
 tmux new-window -t f1_race -n "semaphore" "$current_dir/conf/startagent.sh semaphore.txt $PROLOG $DALI_HOME"
-$WAIT  # Give it time to fully initialise before the race agents start
+wait_for_pane f1_race:semaphore  # Give it time to fully initialise before the race agents start
 
 # ── Launch the remaining agents (skip semaphore — already started) ────────────
 for agent_filename in $BUILD_HOME/*; do
@@ -179,7 +195,7 @@ for agent_filename in $BUILD_HOME/*; do
     $current_dir/conf/makeconf.sh $agent_base $DALI_HOME
     # Start the agent in a new window
     tmux new-window -t f1_race -n "$agent_name" "$current_dir/conf/startagent.sh $agent_base $PROLOG $DALI_HOME"
-    $WAIT  # Small gap before launching the next agent
+    wait_for_pane "f1_race:$agent_name"  # Wait until the agent has produced output
 done
 
 echo "MAS started."

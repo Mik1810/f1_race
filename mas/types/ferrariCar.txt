@@ -31,6 +31,10 @@ safety_car_deployedE:>
 retire_ferrariE:>
     write('[Ferrari] *** LECLERC PARKS THE CAR. Ferrari is out of the race. ***').
 
+green_flagE:>
+    if(race_over, true,
+        (write('[Ferrari] GREEN FLAG! Leclerc pushing flat out!'), nl)).
+
 race_endE:>
     assert(race_over).
 

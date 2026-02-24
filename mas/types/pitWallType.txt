@@ -78,6 +78,11 @@ declare_winner :-
          send_m(ferrari, send_message(race_end, pitwall)),
          send_m(mclaren, send_message(race_end, pitwall)))).
 
+sc_recalledE:>
+    write('[Race Director] GREEN FLAG! Track is clear.'), nl,
+    send_m(ferrari, send_message(green_flag, pitwall)),
+    send_m(mclaren, send_message(green_flag, pitwall)).
+
 lap_done_ferrariE:>
     if(race_over, true,
         (random(60, 91, T),
