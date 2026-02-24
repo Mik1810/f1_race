@@ -21,5 +21,5 @@ readyE:>
     retractall(ready_count(_)),
     N1 is N + 1,
     assert(ready_count(N1)),
-    write('Semaphore: '), write(N1), write('/4 agents ready.'), nl,
+    write('Semaphore: '), write(N1), write('/'), write(4), write(' agents ready.'), nl,
     if(N1 =:= 4, lights_sequence, true).

@@ -19,6 +19,7 @@ fetch('/api/config')
     buildAgentSelect();
     poll();
     setInterval(poll, 1000);
+    setInterval(syncConfig, 5000);  // re-check agents.json for added/removed cars
   })
   .catch(() => {
     document.getElementById('lbl').textContent = 'config error';
@@ -28,6 +29,9 @@ fetch('/api/config')
 function buildGrid() {
   const g = document.getElementById('grid');
   g.innerHTML = '';
+  // Clear minimized tray chips (some may belong to panes being removed)
+  const tray = document.getElementById('minimized-tray');
+  if (tray) tray.innerHTML = '';
   PANES.forEach(p => {
     pinned[p.id] = true;
     minimized[p.id] = false;
@@ -210,6 +214,22 @@ function visibleText(id, full) {
   // Snapshot is no longer in the buffer — reset and show all
   delete clearSnapshot[id];
   return full;
+}
+
+/* ── Config sync: detects cars added/removed from agents.json ── */
+function syncConfig() {
+  fetch('/api/config')
+    .then(r => r.json())
+    .then(cfg => {
+      const newIds  = cfg.panes.map(p => p.id).join(',');
+      const currIds = PANES.map(p => p.id).join(',');
+      if (newIds !== currIds) {
+        PANES = cfg.panes;
+        buildGrid();
+        buildAgentSelect();
+      }
+    })
+    .catch(() => {});
 }
 
 /* ── Polling ──────────────────────────────────────────── */

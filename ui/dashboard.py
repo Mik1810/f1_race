@@ -7,6 +7,7 @@ Usage:  bash ui/run.sh
         Open:  http://localhost:5000
 """
 
+import json
 import subprocess
 import argparse
 import os
@@ -18,15 +19,44 @@ from flask import Flask, jsonify, request, send_from_directory
 
 SESSION = "f1_race"
 
-PANES = [
-    {"id": "server",      "label": "Server (LINDA)",  "color": "#121212", "border": "#555555"},
-    {"id": "user",        "label": "User Console",    "color": "#0b180b", "border": "#4caf50"},
-    {"id": "semaphore",   "label": "Semaphore",      "color": "#0a0a18", "border": "#aa88ff"},
-    {"id": "ferrari",     "label": "Ferrari SF-24",   "color": "#180505", "border": "#cc2200"},
-    {"id": "mclaren",     "label": "McLaren MCL38",   "color": "#180c00", "border": "#ff8700"},
-    {"id": "pitwall",     "label": "Pit Wall",        "color": "#05051a", "border": "#2277ff"},
-    {"id": "safety_car",  "label": "Safety Car",      "color": "#181600", "border": "#ffd700"},
+# Fixed panes: infrastructure agents that never change
+_FIXED_PANES_BEFORE = [
+    {"id": "server",     "label": "Server (LINDA)", "color": "#121212", "border": "#555555"},
+    {"id": "user",       "label": "User Console",   "color": "#0b180b", "border": "#4caf50"},
+    {"id": "semaphore",  "label": "Semaphore",      "color": "#0a0a18", "border": "#aa88ff"},
 ]
+_FIXED_PANES_AFTER = [
+    {"id": "pitwall",    "label": "Pit Wall",       "color": "#05051a", "border": "#2277ff"},
+    {"id": "safety_car", "label": "Safety Car",     "color": "#181600", "border": "#ffd700"},
+]
+
+
+def _load_car_panes() -> list:
+    """Read car agent definitions from agents.json (one level above ui/)."""
+    agents_json = os.path.join(os.path.dirname(__file__), "..", "agents.json")
+    agents_json = os.path.normpath(agents_json)
+    try:
+        with open(agents_json, encoding="utf-8") as f:
+            cfg = json.load(f)
+        return [
+            {
+                "id":     car["id"],
+                "label":  car["label"],
+                "color":  car["color"],
+                "border": car["border"],
+            }
+            for car in cfg.get("cars", [])
+        ]
+    except FileNotFoundError:
+        print(f"[dashboard] WARNING: {agents_json} not found — no car panes loaded.")
+        return []
+    except (KeyError, json.JSONDecodeError) as exc:
+        print(f"[dashboard] WARNING: could not parse agents.json: {exc}")
+        return []
+
+
+# Build the full panes list: fixed infrastructure + cars (from config) + fixed tail
+PANES = _FIXED_PANES_BEFORE + _load_car_panes() + _FIXED_PANES_AFTER
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
@@ -68,14 +98,27 @@ def index():
     return send_from_directory(STATIC_DIR, "index.html")
 
 
+def current_panes() -> list:
+    """Return up-to-date panes list, re-reading agents.json each call."""
+    return _FIXED_PANES_BEFORE + _load_car_panes() + _FIXED_PANES_AFTER
+
+
 @app.route("/api/config")
 def api_config():
-    return jsonify({"session": SESSION, "panes": PANES})
+    return jsonify({"session": SESSION, "panes": current_panes()})
+
+
+@app.route("/api/reload-config")
+def api_reload_config():
+    """Re-read agents.json and return the updated panes list (no restart needed)."""
+    global PANES
+    PANES = current_panes()
+    return jsonify({"ok": True, "panes": PANES})
 
 
 @app.route("/api/panes")
 def api_panes():
-    return jsonify({p["id"]: capture_pane(p["id"]) for p in PANES})
+    return jsonify({p["id"]: capture_pane(p["id"]) for p in current_panes()})
 
 
 @app.route("/api/send", methods=["POST"])

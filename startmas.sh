@@ -107,9 +107,26 @@ rm -f work/*  # Remove agent history
 mkdir -p work/log  # Agents open log/ relative to work/ — must exist before launch
 rm -rf conf/mas/*
 
-# Convert all txt files to Unix line endings (fixes Windows CRLF issue)
-find . -type f -name "*.txt" -exec dos2unix {} \; 2>/dev/null || \
-  find . -type f -name "*.txt" | xargs sed -i 's/\r//'
+# Convert ALL text-based files to Unix line endings (fixes Windows CRLF)
+# NOTE: car instance/type cleanup is handled by generate_agents.py itself.
+# Run BEFORE python so generate_agents.py and agents.json are clean
+find . -type f \( -name "*.txt" -o -name "*.py" -o -name "*.json" -o -name "*.sh" \) \
+    -exec dos2unix {} \; 2>/dev/null \
+  || find . -type f \( -name "*.txt" -o -name "*.py" -o -name "*.json" -o -name "*.sh" \) \
+    | xargs sed -i 's/\r//'
+
+# ── Generate agent files from agents.json ────────────────────────────────────
+echo "════════════════════════════════════════════════"
+echo " Generating agents from: $(realpath ./agents.json)"
+echo "════════════════════════════════════════════════"
+if command -v python3 &>/dev/null; then
+    python3 "./generate_agents.py" --config "./agents.json" \
+        || { echo "ERROR: generate_agents.py failed" >&2; exit 1; }
+    echo "Agent generation complete."
+    echo "════════════════════════════════════════════════"
+else
+    echo "WARNING: python3 not found — skipping agent generation (using existing type files)."
+fi
 
 # Build agents based on instances
 for instance_filename in $INSTANCES_HOME/*.txt; do
