@@ -90,8 +90,6 @@ for i in $(seq 1 30); do
         echo "WARNING: port $LINDA_PORT still in use after 30 s — proceeding anyway." >&2
     fi
 done
-# Settling pause: give the kernel time to finalise all socket teardown.
-sleep 2
 echo "Pre-cleanup done."
 # ────────────────────────────────────────────────────────────────────────────
 if [[ -x "$PROLOG" ]]; then
@@ -107,13 +105,14 @@ rm -f work/*  # Remove agent history
 mkdir -p work/log  # Agents open log/ relative to work/ — must exist before launch
 rm -rf conf/mas/*
 
-# Convert ALL text-based files to Unix line endings (fixes Windows CRLF)
-# NOTE: car instance/type cleanup is handled by generate_agents.py itself.
-# Run BEFORE python so generate_agents.py and agents.json are clean
-find . -type f \( -name "*.txt" -o -name "*.py" -o -name "*.json" -o -name "*.sh" \) \
+# Convert text-based files to Unix line endings (fixes Windows CRLF)
+# NOTE: only process conf/ and root-level files — mas/ and build/ are written
+# by generate_agents.py which already outputs LF, so no need to touch them.
+find ./conf -type f \( -name "*.txt" -o -name "*.sh" -o -name "*.con" -o -name "*.pl" \) \
     -exec dos2unix {} \; 2>/dev/null \
-  || find . -type f \( -name "*.txt" -o -name "*.py" -o -name "*.json" -o -name "*.sh" \) \
+  || find ./conf -type f \( -name "*.txt" -o -name "*.sh" -o -name "*.con" -o -name "*.pl" \) \
     | xargs sed -i 's/\r//'
+dos2unix ./agents.json ./generate_agents.py ./startmas.sh 2>/dev/null || true
 
 # ── Generate agent files from agents.json ────────────────────────────────────
 echo "════════════════════════════════════════════════"

@@ -1,10 +1,15 @@
-:- write('Safety Car ready. Standing by.'), send_m(semaphore, send_message(ready, safety_car)).
+:- write('Safety Car ready. Standing by.'), nl, send_m(semaphore, send_message(ready, safety_car)).
+:- dynamic sc_active/0.
 
 deployE:>
-    write('SAFETY CAR: DEPLOYED! Yellow flags! All cars reduce speed!'),
-    messageA(ferrari, send_message(safety_car_deployed, safety_car)),
-    messageA(mclaren, send_message(safety_car_deployed, safety_car)).
+    if(sc_active, true,
+        (assert(sc_active),
+         write('SAFETY CAR: DEPLOYED! Yellow flags! All cars reduce speed!'), nl)).
 
-recallE:> write('SAFETY CAR: Returning to pits. Green flag waving!').
+recallE:>
+    if(sc_active,
+        (retract(sc_active),
+         write('SAFETY CAR: Green flag! Returning to pits.'), nl),
+        true).
 
-safety_car_inE:> write('SAFETY CAR: Received pit order. Returning to garage.').
+safety_car_inE:> write('SAFETY CAR: Received pit order. Returning to garage.'), nl.

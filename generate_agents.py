@@ -176,7 +176,7 @@ def gen_pitwall_type(cars: list, total_laps: int) -> str:
         suffix = "" if idx2 == n - 1 else ","
         L.append(f"              send_m({i}, send_message(rain_warning, pitwall)){suffix}")
     L.append("             ),")
-    L.append("             write('[Race Director] Green flag.'))))). ")
+    L.append("             true)))).")
     L.append("")
 
     # announce_winner via findall + keysort (built-in in SICStus, no library needed)
@@ -235,7 +235,7 @@ def gen_pitwall_type(cars: list, total_laps: int) -> str:
         L.append(f"         add_time({i}, T),")
         L.append(f"         write('[PitWall] {tm} lap: '), write(T), write('s'), nl,")
         if is_last:
-            L.append(f"         (track_event_this_lap -> retract(track_event_this_lap) ; true),")
+            L.append(f"         (track_event_this_lap -> (retract(track_event_this_lap), send_m(safety_car, send_message(recall, pitwall))) ; true),")
             L.append(f"         retract(lap(N)), N1 is N + 1, assert(lap(N1)),")
             L.append(f"         write('[PitWall] Lap '), write(N1), write(' / {total_laps}'), nl,")
             L.append(f"         print_standings,")
@@ -331,20 +331,21 @@ def gen_safety_car_type(cars: list) -> str:
     ids = [c["id"] for c in cars]
     n   = len(ids)
     L   = [
-        ":- write('Safety Car ready. Standing by.'), send_m(semaphore, send_message(ready, safety_car)).",
+        ":- write('Safety Car ready. Standing by.'), nl, send_m(semaphore, send_message(ready, safety_car)).",
+        ":- dynamic sc_active/0.",
         "",
         "deployE:>",
-        "    write('SAFETY CAR: DEPLOYED! Yellow flags! All cars reduce speed!'),",
-    ]
-    for idx2, i in enumerate(ids):
-        suffix = "." if idx2 == n - 1 else ","
-        L.append(f"    messageA({i}, send_message(safety_car_deployed, safety_car)){suffix}")
-
-    L += [
+        "    if(sc_active, true,",
+        "        (assert(sc_active),",
+        "         write('SAFETY CAR: DEPLOYED! Yellow flags! All cars reduce speed!'), nl)).",
         "",
-        "recallE:> write('SAFETY CAR: Returning to pits. Green flag waving!').",
+        "recallE:>",
+        "    if(sc_active,",
+        "        (retract(sc_active),",
+        "         write('SAFETY CAR: Green flag! Returning to pits.'), nl),",
+        "        true).",
         "",
-        "safety_car_inE:> write('SAFETY CAR: Received pit order. Returning to garage.').",
+        "safety_car_inE:> write('SAFETY CAR: Received pit order. Returning to garage.'), nl.",
         "",
     ]
     return "\n".join(L)
