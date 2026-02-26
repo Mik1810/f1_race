@@ -1,0 +1,85 @@
+\section{DALI Source Patch System}
+\label{sec:patch-system}
+
+\subsection{Motivation}
+
+The F1 Race example depends on three core DALI source files located in
+\texttt{DALI/src/}:
+
+\begin{itemize}[leftmargin=2em]
+  \item \texttt{active\_server\_wi.pl}: starts the LINDA Linda server
+  \item \texttt{active\_user\_wi.pl}: starts the interactive user agent
+  \item \texttt{active\_dali\_wi.pl}: the main agent runner (\textasciitilde2200 lines)
+\end{itemize}
+
+\noindent
+These files belong to the upstream DALI framework and are shared across all
+examples. Modifying them directly in the repository would couple the framework
+to the F1 example, making future upstream merges error-prone.  At the same
+time, the F1 example requires a number of fixes that are not yet part of the
+upstream code\footnote{I am thinkink of doing a pull request to improve the source code}:
+
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{Dynamic port selection}: the server must try ports from 3010 to 3019
+        and write the bound address to \texttt{server.txt} so that every agent
+        connects to the correct port, avoiding \texttt{SPIO\_E\_NET\_ADDRINUSE}
+        on restart.
+  \item \textbf{Address propagation to agents}: \texttt{active\_dali\_wi.pl}
+        was hardcoded to \lstinline|'localhost':3010|; it must now read
+        \texttt{server.txt} at startup (\texttt{SPIO\_E\_NET\_CONNREFUSED} fix).
+  \item \textbf{User agent entry point}: \texttt{active\_user\_wi.pl}
+        must read \texttt{server.txt} and connect only when explicitly invoked
+        via \lstinline|--goal utente.|, with no top-level directive that could
+        block the process on load.
+\end{enumerate}
+
+\noindent
+The \emph{patch system} solves this tension: the upstream files are patched
+\emph{automatically at runtime}, every time the MAS is started, with no
+permanent changes stored in the repository.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\subsection{Structure}
+
+\begin{lstlisting}[style=tree, numbers=none, basicstyle=\ttfamily\footnotesize]
+f1_race/
+  patch/
+    apply_dali_wi.sh        <- main patch script
+    active_server_wi.pl     <- patched copy of the server file
+    active_user_wi.pl       <- patched copy of the user-agent file
+\end{lstlisting}
+
+\noindent
+\texttt{active\_dali\_wi.pl} is \emph{not} copied into \texttt{patch/}
+because it is $\approx$ 2200 lines long; instead a short Python snippet
+performs a surgical in-place edit.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\subsection{Idempotency: the \texttt{[F1\_PATCH]} Marker}
+
+Every patched file contains the following comment on line 7:
+
+\begin{lstlisting}[language=Prolog, numbers=none]
+% [F1_PATCH] read server address from server.txt (dynamic port support)
+\end{lstlisting}
+
+\noindent
+Before applying any change, \texttt{apply\_dali\_wi.sh} checks for this
+marker with \texttt{grep}. If it is found, the file is skipped entirely; if
+not, the patch is applied and the marker is inserted. This makes every
+invocation of the script safe to repeat without double-patching.
+
+\subsection{Reverting the Patches}
+
+To revert all three files to their original upstream state, remove the
+\texttt{[F1\_PATCH]} marker line and restore the original code. The fastest
+way is via \texttt{git}:
+
+\begin{lstlisting}[language=bash, numbers=none]
+git checkout -- src/active_server_wi.pl \
+               src/active_user_wi.pl   \
+               src/active_dali_wi.pl
+\end{lstlisting}
+
+\noindent
+The next run of \texttt{startmas.sh} will re-apply the patches automatically.

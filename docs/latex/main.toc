@@ -36,4 +36,9 @@
 \contentsline {subsection}{\numberline {10.1}Architecture}{28}{subsection.10.1}%
 \contentsline {subsection}{\numberline {10.2}Quickstart}{29}{subsection.10.2}%
 \contentsline {subsection}{\numberline {10.3}Environment Variables}{29}{subsection.10.3}%
-\contentsline {section}{\numberline {11}Shutdown}{29}{section.11}%
+\contentsline {section}{\numberline {11}DALI Source Patch System}{29}{section.11}%
+\contentsline {subsection}{\numberline {11.1}Motivation}{29}{subsection.11.1}%
+\contentsline {subsection}{\numberline {11.2}Structure}{30}{subsection.11.2}%
+\contentsline {subsection}{\numberline {11.3}Idempotency: the \texttt {[F1\_PATCH]} Marker}{30}{subsection.11.3}%
+\contentsline {subsection}{\numberline {11.4}Reverting the Patches}{30}{subsection.11.4}%
+\contentsline {section}{\numberline {12}Shutdown}{31}{section.12}%

@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (MiKTeX 25.4) (preloaded format=pdflatex 2025.9.9)  26 FEB 2026 16:35
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (MiKTeX 25.4) (preloaded format=pdflatex 2025.9.9)  27 FEB 2026 00:07
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -814,7 +814,7 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 [2] (chapters/01_introduction.tex) (chapters/02_requirements.tex) (chapters/03_structure.tex
 
 [3]) (chapters/04_agents.tex
-<../../imgs/06_class_diagram.png, id=201, 1806.75pt x 1173.38374pt>
+<../../imgs/06_class_diagram.png, id=226, 1806.75pt x 1173.38374pt>
 File: ../../imgs/06_class_diagram.png Graphic file (type png)
 <use ../../imgs/06_class_diagram.png>
 Package pdftex.def Info: ../../imgs/06_class_diagram.png  used on input line 8.
@@ -1036,7 +1036,7 @@ Overfull \hbox (9.70923pt too wide) in paragraph at lines 35--2
 \T1/cmr/m/n/12 At any point a car's \T1/cmr/m/it/12 in-ter-nal events \T1/cmr/m/n/12 (\T1/cmtt/m/n/12 engine_-failureI \T1/cmr/m/n/12 or \T1/cmtt/m/n/12 push_-lapI\T1/cmr/m/n/12 ) can fire au-tonomously
  []
 
-<../../imgs/01_startup.png, id=598, 1204.5pt x 823.075pt>
+<../../imgs/01_startup.png, id=623, 1204.5pt x 823.075pt>
 File: ../../imgs/01_startup.png Graphic file (type png)
 <use ../../imgs/01_startup.png>
 Package pdftex.def Info: ../../imgs/01_startup.png  used on input line 11.
@@ -1044,7 +1044,7 @@ Package pdftex.def Info: ../../imgs/01_startup.png  used on input line 11.
 
 
 [20]
-<../../imgs/02_lap_roundrobin.png, id=610, 1204.5pt x 1534.73375pt>
+<../../imgs/02_lap_roundrobin.png, id=635, 1204.5pt x 1534.73375pt>
 File: ../../imgs/02_lap_roundrobin.png Graphic file (type png)
 <use ../../imgs/02_lap_roundrobin.png>
 Package pdftex.def Info: ../../imgs/02_lap_roundrobin.png  used on input line 22.
@@ -1052,7 +1052,7 @@ Package pdftex.def Info: ../../imgs/02_lap_roundrobin.png  used on input line 22
 
 
 [21 <../../imgs/01_startup.png>]
-<../../imgs/03_safety_car.png, id=617, 1204.5pt x 1365.1pt>
+<../../imgs/03_safety_car.png, id=642, 1204.5pt x 1365.1pt>
 File: ../../imgs/03_safety_car.png Graphic file (type png)
 <use ../../imgs/03_safety_car.png>
 Package pdftex.def Info: ../../imgs/03_safety_car.png  used on input line 32.
@@ -1060,7 +1060,7 @@ Package pdftex.def Info: ../../imgs/03_safety_car.png  used on input line 32.
 
 
 [22 <../../imgs/02_lap_roundrobin.png>]
-<../../imgs/04_engine_failure.png, id=624, 1204.5pt x 1284.8pt>
+<../../imgs/04_engine_failure.png, id=649, 1204.5pt x 1284.8pt>
 File: ../../imgs/04_engine_failure.png Graphic file (type png)
 <use ../../imgs/04_engine_failure.png>
 Package pdftex.def Info: ../../imgs/04_engine_failure.png  used on input line 42.
@@ -1086,7 +1086,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 26--29
 
  []
 
-<../../imgs/07_consoles.png, id=641, 1927.2pt x 1084.05pt>
+<../../imgs/07_consoles.png, id=666, 1927.2pt x 1084.05pt>
 File: ../../imgs/07_consoles.png Graphic file (type png)
 <use ../../imgs/07_consoles.png>
 Package pdftex.def Info: ../../imgs/07_consoles.png  used on input line 47.
@@ -1094,7 +1094,7 @@ Package pdftex.def Info: ../../imgs/07_consoles.png  used on input line 47.
 
 
 [25]
-<../../imgs/08_podium.png, id=658, 1927.2pt x 1084.05pt>
+<../../imgs/08_podium.png, id=683, 1927.2pt x 1084.05pt>
 File: ../../imgs/08_podium.png Graphic file (type png)
 <use ../../imgs/08_podium.png>
 Package pdftex.def Info: ../../imgs/08_podium.png  used on input line 71.
@@ -1102,7 +1102,7 @@ Package pdftex.def Info: ../../imgs/08_podium.png  used on input line 71.
 
 
 [26 <../../imgs/07_consoles.png>]
-<../../imgs/09_circuit.png, id=666, 1927.2pt x 1084.05pt>
+<../../imgs/09_circuit.png, id=691, 1927.2pt x 1084.05pt>
 File: ../../imgs/09_circuit.png Graphic file (type png)
 <use ../../imgs/09_circuit.png>
 Package pdftex.def Info: ../../imgs/09_circuit.png  used on input line 110.
@@ -1116,28 +1116,44 @@ Overfull \hbox (16.22688pt too wide) in paragraph at lines 58--59
 []\T1/cmr/m/n/12 Clone the GitHub repo project from []$\T1/cmtt/m/n/12 https : / / github . com / Mik1810 / f1 _ dali _ project$[]
  []
 
-) (chapters/11_shutdown.tex)
+) (chapters/12_patch_system.tex
 
-[29] (main.aux)
+[29]
+Overfull \hbox (6.01295pt too wide) in paragraph at lines 27--30
+[]\T1/cmr/bx/n/12 Address prop-a-ga-tion to agents\T1/cmr/m/n/12 : \T1/cmtt/m/n/12 active_-dali_-wi.pl \T1/cmr/m/n/12 was hard-coded to [][][]
+ []
+
+LaTeX Font Info:    Font shape `T1/cmtt/bx/n' in size <14.4> not available
+(Font)              Font shape `T1/cmtt/m/n' tried instead on input line 58.
+) (chapters/11_shutdown.tex)
+Underfull \hbox (badness 10000) in paragraph at lines 3--121
+
+ []
+
+
+
+[30]
+
+[31] (main.aux)
  ***********
 LaTeX2e <2025-06-01>
 L3 programming layer <2025-05-26>
  ***********
 Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: 0AB3BE05CA75F897900EFFB25DEAF30E;4874.
+(rerunfilecheck)             Checksum: 19436929497052BD5605C783580008D5;5676.
  ) 
 Here is how much of TeX's memory you used:
- 35867 strings out of 468225
- 766515 string characters out of 5432974
- 1647174 words of memory out of 5000000
- 63415 multiletter control sequences out of 15000+600000
- 647630 words of font info for 93 fonts, out of 8000000 for 9000
+ 35932 strings out of 468225
+ 767542 string characters out of 5432974
+ 1647225 words of memory out of 5000000
+ 63453 multiletter control sequences out of 15000+600000
+ 647943 words of font info for 94 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  98i,9n,101p,1666b,1302s stack positions out of 10000i,1000n,20000p,200000b,200000s
- <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecit1095.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ectt1000.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm1000.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm0700.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ectt1095.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm0600.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm0800.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ectt0800.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\tcrm1200.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ectt1200.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecti1200.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecbx1440.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm1095.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecbx1095.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm1200.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecbx1200.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecbx1728.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm1440.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm1728.pk><C:/Users/micha/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi12.pfb><C:/Users/micha/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr12.pfb><C:/Users/micha/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb>
-Output written on c:/Users\micha\Desktop\Dali_project\DALI\Examples\f1_race\docs\latex\main.pdf (29 pages, 1218867 bytes).
+ <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ectt1440.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecit1095.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ectt1000.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm1000.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm0700.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ectt1095.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm0600.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm0800.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ectt0800.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\tcrm1200.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecti1200.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecbx1440.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm1095.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecbx1095.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ectt1200.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm1200.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecbx1200.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecbx1728.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm1440.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm1728.pk><C:/Users/micha/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi12.pfb><C:/Users/micha/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr12.pfb><C:/Users/micha/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb>
+Output written on c:/Users\micha\Desktop\Dali_project\DALI\Examples\f1_race\docs\latex\main.pdf (31 pages, 1241622 bytes).
 PDF statistics:
- 1542 PDF objects out of 1728 (max. 8388607)
- 429 named destinations out of 1000 (max. 500000)
- 325 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 1636 PDF objects out of 1728 (max. 8388607)
+ 452 named destinations out of 1000 (max. 500000)
+ 365 words of extra memory for PDF output out of 10000 (max. 10000000)
 
