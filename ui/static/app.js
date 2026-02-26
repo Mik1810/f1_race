@@ -136,6 +136,7 @@ function clearAll() {
 /* ── Restart overlay helpers ─────────────────────────── */
 let restarting = false;
 let restartTimer = null;
+let _serverReadySince = 0; // timestamp (ms) when serverReady first became true
 
 function showOverlay(msg, sub) {
   document.getElementById('overlay-msg').textContent = msg;
@@ -152,6 +153,7 @@ async function restartMas() {
   // Guard against double-clicks or concurrent calls.
   if (restarting) return;
   restarting = true;
+  _serverReadySince = 0;
 
   // Phase 1: overlay visible while the HTTP call is in flight.
   showOverlay('Restarting MAS…', 'Sending kill signal to SICStus');
@@ -175,7 +177,7 @@ async function restartMas() {
   closeLeaderboard();
   lbShown = false;          // new race — allow results modal to appear again
   _pendingLbResults = null; // discard any held leaderboard from previous race
-  showOverlay('Waiting for agents…', 'LINDA server starting on port 3010');
+  showOverlay('Waiting for agents…', 'LINDA server starting…');
 
   // Safety net: hide overlay after 90 s if MAS never comes back.
   restartTimer = setTimeout(() => {
@@ -249,18 +251,33 @@ function poll() {
       document.getElementById('led').className = 'on';
       document.getElementById('lbl').textContent = 'live \u2022 1s refresh';
       if (restarting) {
-        // Hide the overlay only when BOTH the server pane and the user-agent
-        // pane are available and have content.  Waiting for the user pane
-        // ensures all other agent panes have also started, so the console
-        // view is never empty when the overlay disappears.
+        // Primary signal: LINDA server pane has content → MAS is functionally up.
+        // Secondary signal: user-agent pane also has content (belt-and-suspenders).
+        // Fallback: if server is ready but user pane is still empty/missing after
+        // 10 s, unlock anyway — avoids permanent stuck overlay when the user
+        // agent is slow to start or crashes silently.
         const serverText = data['server'] || '';
         const userText   = data['user']   || '';
         const serverReady = serverText && !serverText.startsWith('[pane');
         const userReady   = userText   && !userText.startsWith('[pane');
-        if (serverReady && userReady) {
+
+        if (serverReady && !_serverReadySince) {
+          _serverReadySince = Date.now();
+        }
+        const serverReadyMs = _serverReadySince ? Date.now() - _serverReadySince : 0;
+        const timedOut = serverReadyMs > 10000; // 10 s fallback
+
+        if (serverReady && (userReady || timedOut)) {
           restarting = false;
+          _serverReadySince = 0;
           hideOverlay();
+        } else if (serverReady) {
+          document.getElementById('overlay-sub').textContent =
+            `LINDA ready — waiting for user agent\u2026 (${Math.round(serverReadyMs / 1000)}s)`;
+          return;
         } else {
+          document.getElementById('overlay-sub').textContent =
+            'Waiting for LINDA server\u2026';
           return; // Not ready yet — skip pane update
         }
       }

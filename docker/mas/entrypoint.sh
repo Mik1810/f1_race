@@ -23,11 +23,9 @@ kill_mas() {
     pkill -9 -f active_server_wi.pl 2>/dev/null || true
     pkill -9 -f active_dali_wi.pl   2>/dev/null || true
     pkill -9 -f active_user_wi.pl   2>/dev/null || true
-    # Wait for port 3010 to be released (up to 15s)
-    for i in $(seq 1 15); do
-        nc -z localhost 3010 2>/dev/null || break
-        sleep 1
-    done
+    # No need to wait for a specific port here: startmas.sh already handles
+    # dynamic port selection (3010..3019) and waits for server.txt to confirm
+    # the chosen port before proceeding.
 }
 
 run_mas() {

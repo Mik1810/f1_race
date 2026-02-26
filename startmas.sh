@@ -46,8 +46,15 @@ LINDA_PORT=3010
 INSTANCES_HOME=mas/instances
 TYPES_HOME=mas/types
 BUILD_HOME=build
+PATCH_DIR="$current_dir/patch"
 
-# ── Pre-cleanup: ensure no stale DALI instance is running ──────────────────
+# ── Auto-patch DALI source files ───────────────────────────────────────────
+# All patch logic lives in patch/apply_dali_wi.sh — this is the only call.
+_tick "START auto-patch check"
+chmod +x "$PATCH_DIR/apply_dali_wi.sh"
+bash "$PATCH_DIR/apply_dali_wi.sh" "$current_dir/$DALI_HOME" "$PATCH_DIR"
+_tick "END auto-patch check"
+# ────────────────────────────────────────────────────────────────────────────
 # Uses a lock file so concurrent startmas.sh invocations never overlap.
 LOCKFILE="/tmp/f1_race_startmas.lock"
 exec 200>"$LOCKFILE"
@@ -167,34 +174,49 @@ wait_for_pane() {
     echo "WARNING: pane '$target' had no output after ${timeout}s — continuing anyway." >&2
 }
 
-# Start the LINDA server in a new console
-_tick "START tmux server (port $LINDA_PORT)"
+# Remove any stale server.txt so we can detect when the new server writes its actual port.
+rm -f server.txt
+
+# Start the LINDA server in a new console.
+# go($LINDA_PORT,'server.txt') will try ports LINDA_PORT..LINDA_PORT+9 until one is free,
+# then write the chosen host:port to server.txt via on_open/3.
+_tick "START tmux server (starting from port $LINDA_PORT)"
 srvcmd="$PROLOG --noinfo -l $DALI_HOME/active_server_wi.pl --goal go($LINDA_PORT,'server.txt')."
 echo "server: " $srvcmd
 tmux new-session -d -s f1_race -n "server" $srvcmd
 _tick "END tmux server launched"
 
-# Wait until the LINDA server is actually listening on port 3010.
-# Use ss -tnlp (LISTEN state only) instead of nc -z:
-#   - no TCP connection is established → no extra TIME_WAIT sockets
-#   - purely reads the kernel socket table (no special perms needed)
-echo "Waiting for LINDA server on port $LINDA_PORT..."
-_tick "START ss LINDA wait"
+# Wait until server.txt is written by on_open/3 (contains the actual host:port chosen).
+# This works correctly even when port 3010 is in TIME_WAIT and a higher port was used.
+echo "Waiting for LINDA server (starting from port $LINDA_PORT)..."
+_tick "START server.txt wait"
+LINDA_PORT_ACTUAL=""
 for i in $(seq 1 150); do
-    if ss -tnlp "sport = :$LINDA_PORT" 2>/dev/null | grep -q "LISTEN"; then
-        _tick "END ss LINDA ready"
-        echo "LINDA server is ready (after $((i * 2 / 10)).$((i * 2 % 10))s)."
-        break
+    if [ -s server.txt ]; then
+        LINDA_PORT_ACTUAL=$(grep -oP ':\K[0-9]+(?=\.)' server.txt | head -1)
+        [ -n "$LINDA_PORT_ACTUAL" ] && break
     fi
     sleep 0.2
     if [ $i -eq 150 ]; then
-        _tick "ERROR: ss LINDA timeout — dumping server pane"
+        _tick "ERROR: server.txt not written within 30 s — dumping server pane"
         tmux capture-pane -pt f1_race:server -S -50 2>/dev/null | tail -20 | while IFS= read -r l; do _tick "  [server] $l"; done
         _tick "ABORT: LINDA did not start within 30 s"
         echo "ERROR: LINDA server did not start within 30 seconds. Aborting." >&2
         exit 1
     fi
 done
+_tick "END server.txt ready — actual port: $LINDA_PORT_ACTUAL"
+
+# Confirm the chosen port is actually in LISTEN state (belt-and-suspenders check).
+if ss -tnlp "sport = :$LINDA_PORT_ACTUAL" 2>/dev/null | grep -q "LISTEN"; then
+    echo "LINDA server is ready on port $LINDA_PORT_ACTUAL."
+    _tick "LINDA listening on $LINDA_PORT_ACTUAL confirmed"
+else
+    _tick "WARNING: port $LINDA_PORT_ACTUAL not yet in LISTEN — proceeding anyway"
+    echo "WARNING: ss did not confirm port $LINDA_PORT_ACTUAL in LISTEN; proceeding anyway."
+fi
+# Update LINDA_PORT so downstream uses (if any) reflect the actual port chosen.
+LINDA_PORT=$LINDA_PORT_ACTUAL
 
 # Start user agent in a new window
 _tick "START user agent"
