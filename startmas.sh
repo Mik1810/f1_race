@@ -113,12 +113,12 @@ find ./conf -type f \( -name "*.txt" -o -name "*.sh" -o -name "*.con" -o -name "
     | xargs sed -i 's/\r//'
 dos2unix ./agents.json ./generate_agents.py ./startmas.sh 2>/dev/null || true
 
-# ── Generate agent files from agents.json ────────────────────────────────────
+# Generate agent files from agents.json 
 echo "════════════════════════════════════════════════"
 echo " Generating agents from: $(realpath ./agents.json)"
 echo "════════════════════════════════════════════════"
 if command -v python3 &>/dev/null; then
-    python3 "./generate_agents.py" --config "./agents.json" \
+    python3 "./generate_agents.py" --config "./agents.json" --force \
         || { echo "ERROR: generate_agents.py failed" >&2; exit 1; }
     echo "Agent generation complete."
     echo "════════════════════════════════════════════════"

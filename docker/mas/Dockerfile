@@ -28,4 +28,10 @@ WORKDIR /dali/Examples/f1_race
 # so capture-pane works across containers with no code changes.
 ENV TMUX_TMPDIR=/tmp/tmux-shared
 
-CMD ["bash", "startmas.sh"]
+# Entrypoint: runs startmas.sh initially, then watches for restart triggers
+# written by the UI container (see dashboard.py _launch()).
+# Copied into the image so it is available even before the bind-mount is ready.
+COPY Examples/f1_race/docker/mas/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+CMD ["/entrypoint.sh"]

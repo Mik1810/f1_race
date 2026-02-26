@@ -24,7 +24,7 @@ INSTANCES_DIR = os.path.join(BASE, "mas", "instances")
 TYPES_DIR     = os.path.join(BASE, "mas", "types")
 
 
-# ── helpers ───────────────────────────────────────────────────────────────────
+# helpers 
 
 def wf(path: str, text: str) -> None:
     """Write file, create directories if needed, always Unix line endings."""
@@ -39,7 +39,7 @@ def load_config(path: str) -> dict:
         return json.load(f)
 
 
-# ── car type template ─────────────────────────────────────────────────────────
+# car type template
 
 def gen_car_type(car: dict) -> str:
     i   = car["id"]
@@ -114,7 +114,7 @@ def gen_car_type(car: dict) -> str:
     )
 
 
-# ── pitwall type template ─────────────────────────────────────────────────────
+# pitwall type template
 
 def gen_pitwall_type(cars: list, total_laps: int) -> str:
     ids = [c["id"] for c in cars]
@@ -229,7 +229,7 @@ def gen_pitwall_type(cars: list, total_laps: int) -> str:
         suffix = "." if idx2 == n - 1 else ","
         L.append(f"    send_m({i}, send_message(green_flag, pitwall)){suffix}")
     L.append("")
-    # ── lap_done events (round-robin) ─────────────────────────────────────────
+    # lap_done events (round-robin) 
     # car[idx] → triggers car[(idx+1) % n]
     # last car also increments lap counter and checks total_laps
     for idx, c in enumerate(cars):
@@ -257,7 +257,7 @@ def gen_pitwall_type(cars: list, total_laps: int) -> str:
             L.append(f"         messageA({next_i}, send_message(lap_go_{next_i}, pitwall))))." )
         L.append("")
 
-    # ── pit_done events (same round-robin, +25 s) ─────────────────────────────
+    # pit_done events (same round-robin, +25 s) 
     for idx, c in enumerate(cars):
         i      = c["id"]
         tm     = c["team"]
@@ -277,9 +277,7 @@ def gen_pitwall_type(cars: list, total_laps: int) -> str:
             L.append(f"         messageA({next_i}, send_message(lap_go_{next_i}, pitwall)))).")
         L.append("")
 
-    # ── engine failure & push lap events ─────────────────────────────────────
-    for c in cars:
-        i   = c["id"]
+    # engine failure & push lap events
         tm  = c["team"]
         drv = c["driver"]
         L += [
@@ -297,7 +295,6 @@ def gen_pitwall_type(cars: list, total_laps: int) -> str:
     return "\n".join(L)
 
 
-# ── semaphore type template ───────────────────────────────────────────────────
 
 def gen_semaphore_type(cars: list) -> str:
     # ready agents: all cars + pitwall + safety_car
@@ -335,7 +332,6 @@ def gen_semaphore_type(cars: list) -> str:
     return "\n".join(L)
 
 
-# ── safety_car type template ──────────────────────────────────────────────────
 
 def gen_safety_car_type(cars: list) -> str:
     ids = [c["id"] for c in cars]
@@ -356,13 +352,10 @@ def gen_safety_car_type(cars: list) -> str:
         "         send_m(pitwall, send_message(sc_recalled, safety_car))),",
         "        true).",
         "",
-        "safety_car_inE:> write('SAFETY CAR: Received pit order. Returning to garage.'), nl.",
-        "",
     ]
     return "\n".join(L)
 
 
-# ── main ──────────────────────────────────────────────────────────────────────
 
 FIXED_INSTANCES = {"pitwall", "safety_car", "semaphore"}
 

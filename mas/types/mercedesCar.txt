@@ -1,0 +1,63 @@
+:- write('[Mercedes] W15 ready on the grid.'), send_m(semaphore, send_message(ready, mercedes)).
+:- dynamic race_started/0.
+:- dynamic race_over/0.
+:- dynamic engine_failure_mercedes_fired/0.
+:- dynamic push_lap_mercedes_fired/0.
+
+start_raceE:>
+    assert(race_started),
+    retractall(push_lap_mercedes_fired),
+    write('[Mercedes] LAP 1 -- LIGHTS OUT! Hamilton launches off the line!'),
+    messageA(pitwall, send_message(lap_done_mercedes, mercedes)).
+
+lap_go_mercedesE:>
+    if(\+ race_started, assert(race_started), true),
+    retractall(push_lap_mercedes_fired),
+    write('[Mercedes] On the power! Hamilton attacking every sector.'),
+    messageA(pitwall, send_message(lap_done_mercedes, mercedes)).
+
+box_mercedesE:>
+    write('[Mercedes] BOX BOX BOX! Mercedes dives into the pits.'),
+    messageA(pitwall, send_message(pit_done_mercedes, mercedes)).
+
+rain_warningE:>
+    if(race_over, true,
+        (write('[Mercedes] RAIN WARNING. Hamilton switching to intermediate tyres.'), nl)).
+
+safety_car_deployedE:>
+    if(race_over, true,
+        (write('[Mercedes] Safety car deployed. Hamilton conserving tyres.'), nl)).
+
+retire_mercedesE:>
+    write('[Mercedes] *** HAMILTON PARKS THE CAR. Mercedes is out of the race. ***').
+
+green_flagE:>
+    if(race_over, true,
+        (write('[Mercedes] GREEN FLAG! Hamilton pushing flat out!'), nl)).
+
+race_endE:>
+    assert(race_over).
+
+engine_failure_mercedes :-
+    race_started,
+    \+ race_over,
+    \+ engine_failure_mercedes_fired,
+    random(0, 1000, R),
+    R < 2.
+
+engine_failure_mercedesI:>
+    assert(engine_failure_mercedes_fired),
+    write('[Mercedes] *** ENGINE FAILURE -- Power loss! Hamilton slowing! ***'),
+    send_m(pitwall, send_message(mercedes_engine_failure, mercedes)).
+
+push_lap_mercedes :-
+    race_started,
+    \+ race_over,
+    \+ push_lap_mercedes_fired,
+    random(0, 100, R),
+    R < 10.
+
+push_lap_mercedesI:>
+    assert(push_lap_mercedes_fired),
+    write('[Mercedes] PUSH LAP! Hamilton going flat out -- setting fastest sectors!'),
+    send_m(pitwall, send_message(mercedes_push_lap, mercedes)).

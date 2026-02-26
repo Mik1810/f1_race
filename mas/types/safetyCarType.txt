@@ -12,5 +12,3 @@ recallE:>
          write('SAFETY CAR: Returning to pits. Notifying race control.'), nl,
          send_m(pitwall, send_message(sc_recalled, safety_car))),
         true).
-
-safety_car_inE:> write('SAFETY CAR: Received pit order. Returning to garage.'), nl.

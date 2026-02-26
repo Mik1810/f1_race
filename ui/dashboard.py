@@ -9,6 +9,7 @@ Usage:  bash ui/run.sh
 
 import json
 import re
+import socket
 import subprocess
 import argparse
 import os
@@ -256,7 +257,9 @@ def api_race_state():
 
     # Per-car data
     for car_id, car_meta in cars_cfg.items():
-        cap = car_id.capitalize()
+        # Use the team name (as written by PitWall) rather than capitalize(id),
+        # which breaks for multi-word names like "Red Bull" (id="redbull").
+        cap = car_meta.get("team", car_id.capitalize())
 
         # Lap times list
         lap_times = [
@@ -350,6 +353,29 @@ def api_restart():
     return jsonify({"ok": True})
 
 
+def _wait_port_free(port: int = 3010, timeout: float = 25.0) -> bool:
+    """Block until the TCP port can be bound (returns True) or timeout expires.
+
+    Uses bind() — not connect() — because SICStus calls bind() to claim the
+    port.  A socket in TIME_WAIT or CLOSE_WAIT will refuse connect() (no one
+    listening) but still prevent bind(), causing ADDRINUSE.  By attempting
+    bind() ourselves (without SO_REUSEADDR) we test the exact same condition
+    SICStus will face.
+    """
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                # SO_REUSEADDR intentionally NOT set — mirror what SICStus does.
+                s.bind(("", port))
+                return True   # bind succeeded: port is truly free
+            except OSError:
+                time.sleep(0.5)
+    print(f"[restart] WARNING: port {port} still occupied after {timeout:.0f}s — proceeding anyway.",
+          flush=True)
+    return False
+
+
 def _kill_all():
     """Best-effort kill of every MAS-related process."""
     for cmd in [
@@ -366,21 +392,54 @@ def _kill_all():
     time.sleep(1)
 
 
+def _in_docker() -> bool:
+    """Return True when running inside a Docker container."""
+    return os.path.exists("/.dockerenv")
+
+
 def _launch(f1_race_dir: str):
-    """Launch startmas.sh detached."""
-    subprocess.Popen(
-        ["bash", "startmas.sh"],
-        cwd=f1_race_dir,
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        start_new_session=True,
-    )
+    """Launch or signal startmas.sh depending on the runtime environment.
+
+    • Docker (ui container): cannot run startmas.sh directly because SICStus
+      Prolog is only available in the mas container.  Write a trigger file to
+      the shared tmux-socket volume (/tmp/tmux-shared/.restart); the mas
+      container's entrypoint (docker/mas/entrypoint.sh) polls for it and
+      re-runs startmas.sh inside the correct container.
+
+    • WSL / bare Linux: Flask and startmas.sh share the same environment, so
+      spawn startmas.sh as a detached subprocess exactly as before.
+    """
+    if _in_docker():
+        trigger = "/tmp/tmux-shared/.restart"
+        try:
+            os.makedirs(os.path.dirname(trigger), exist_ok=True)
+            with open(trigger, "w") as fh:
+                fh.write("1\n")
+            print(f"[restart] Trigger written to {trigger}", flush=True)
+        except Exception as exc:
+            print(f"[restart] WARNING: could not write restart trigger: {exc}", flush=True)
+    else:
+        # WSL / native Linux: run startmas.sh in the same environment as Flask.
+        subprocess.Popen(
+            ["bash", "startmas.sh"],
+            cwd=f1_race_dir,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+        print("[restart] startmas.sh launched as detached process.", flush=True)
 
 
 def _do_restart(f1_race_dir: str, max_attempts: int = 5):
     """Kill, launch, then start the watcher thread."""
     _kill_all()
+    # Wait until the LINDA port is confirmed free before launching the new MAS.
+    # Without this, startmas.sh finds port 3010 still in TIME_WAIT / CLOSE_WAIT
+    # (SICStus sockets linger a few seconds after SIGKILL) and either fails with
+    # ADDRINUSE or stalls for 30 s on its own port-wait loop — which is why a
+    # second manual click was needed to make it work.
+    _wait_port_free(3010)
     _launch(f1_race_dir)
     t = threading.Thread(
         target=_watch_for_addrinuse,

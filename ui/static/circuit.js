@@ -194,7 +194,9 @@ function _blankAnim(id) {
 }
 
 /**
- * Sets the animation barrier once every car has at least one lap enqueued.
+ * Sets the animation barrier once every car has at least one lap enqueued,
+ * or after a 30-second fallback timeout (guards against agents that never
+ * report laps so that cars which DO have data still animate).
  * Assigns chainBase = _animationBarrier to ALL cars at the same moment so
  * they share an identical time origin and start from the S/F line together.
  */
@@ -203,7 +205,11 @@ function _trySetBarrier() {
   if (!_raceStartedAt) return;
   const cars = Object.values(carAnim);
   if (!cars.length) return;
-  if (!cars.every(a => a.enqueuedLaps > 0)) return; // wait for all cars
+  const allReady = cars.every(a => a.enqueuedLaps > 0);
+  // Fallback: if 30 s after race start some cars still have 0 laps (agent
+  // missing or not yet generated), fire the barrier anyway so the others move.
+  const timedOut = Date.now() - _raceStartedAt > 30_000;
+  if (!allReady && !timedOut) return;
   _animationBarrier = _raceStartedAt + LIGHTS_OUT_DELAY;
   for (const a of cars) a.chainBase = _animationBarrier;
 }
@@ -298,7 +304,12 @@ function advanceCar(a) {
     const elapsed = Date.now() - a.active.startAt;
     if (elapsed >= a.active.durationMs) {
       a.completedDuration += a.active.durationMs;
-      if (a.active.type === 'lap') a.completedLaps++;
+      if (a.active.type === 'lap') {
+        a.completedLaps++;
+        a.t = 1.0;   // guarantee car is at S/F line when lap expires,
+                     // even if requestAnimationFrame was throttled and
+                     // currentT() never reached 1.0 before expiry
+      }
       a.active = null;
     }
   }
