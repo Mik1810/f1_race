@@ -15,6 +15,7 @@ Each arrow represents a \texttt{send\_m} or \texttt{messageA} call in the DALI s
 \end{figure}
 
 \subsection{Lap Round-Robin}
+\label{sec:round_robin}
 
 \begin{figure}[H]
   \centering
@@ -42,14 +43,4 @@ Each arrow represents a \texttt{send\_m} or \texttt{messageA} call in the DALI s
   \caption{Engine failure: a car's internal event notifies the pit wall, which sets the
            DNF time, retires the car, and immediately calls \texttt{declare\_winner}.}
   \label{fig:seq_dnf}
-\end{figure}
-
-\subsection{Push Lap (Fastest-Lap Bonus)}
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=\textwidth]{../../imgs/05_push_lap.png}
-  \caption{Push lap: a car's internal event fires at most once per lap and notifies the
-           pit wall, which deducts $3\,\text{s}$ from the car's accumulated time.}
-  \label{fig:seq_push}
 \end{figure}

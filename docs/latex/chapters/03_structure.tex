@@ -2,24 +2,24 @@
 
 \begin{lstlisting}[language={}, numbers=none, frame=none, backgroundcolor=\color{white},basicstyle=\ttfamily\scriptsize]
 f1_race/
-+-- agents.json           <- Single source of truth for car agents
++-- agents.json           <- Configuration file for car agents
 +-- generate_agents.py    <- Generates DALI files from agents.json
 +-- startmas.sh           <- Launch script (Linux/WSL)
 +-- startmas.bat          <- Launch script (Windows)
 +-- docker-compose.yml    <- Docker Compose (mas + ui containers)
-+-- .env.example          <- Template for SICSTUS_PATH
++-- .env.example          <- Template for .env file
 +-- docker/
 |   +-- setup.sh          <- Auto-detects SICStus, writes .env
 |   +-- mas/Dockerfile
 |   \-- ui/Dockerfile
 +-- ui/
-|   +-- dashboard.py      <- Flask backend + /api/race-state endpoint
+|   +-- dashboard.py      <- Flask backend for the dashboard
 |   +-- run.sh            <- Creates venv + launches dashboard
 |   +-- requirements.txt
 |   \-- static/
 |       +-- index.html    <- Tab bar: Logs / Circuit
 |       +-- app.js        <- Dashboard bootstrap, polling, tab switching
-|       +-- circuit.js    <- Canvas circuit visualiser (Catmull-Rom, anim)
+|       +-- circuit.js    <- Canvas circuit visualiser
 |       \-- style.css     <- Layout, tab bar, circuit sidebar styles
 +-- mas/
 |   +-- instances/        <- Agent instance files

@@ -37,8 +37,8 @@
     {2}{386.01135pt}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {4.2.4}SafetyCarAgent}{17}{subsubsection.4.2.4}\protected@file@percent }
 \gdef \LT@v {\LT@entry 
-    {2}{92.42891pt}\LT@entry 
-    {2}{307.31393pt}}
+    {2}{73.90843pt}\LT@entry 
+    {2}{301.47086pt}}
 \@writefile{toc}{\contentsline {section}{\numberline {5}Dynamic Agent System}{18}{section.5}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Code Generation Pipeline}{18}{subsection.5.1}\protected@file@percent }
 \gdef \LT@vi {\LT@entry 
@@ -53,44 +53,42 @@
 \@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Startup sequence: all agents register with the semaphore, which runs the lights sequence and fires \texttt  {start\_race} to the first car.}}{21}{figure.2}\protected@file@percent }
 \newlabel{fig:seq_startup}{{2}{21}{Startup sequence: all agents register with the semaphore, which runs the lights sequence and fires \texttt {start\_race} to the first car}{figure.2}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {7.2}Lap Round-Robin}{22}{subsection.7.2}\protected@file@percent }
+\newlabel{sec:round_robin}{{7.2}{22}{Lap Round-Robin}{subsection.7.2}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Lap round-robin: the pit wall dispatches \texttt  {lap\_go} tokens in order, accumulates lap times, and increments the lap counter after the last car.}}{22}{figure.3}\protected@file@percent }
 \newlabel{fig:seq_lap}{{3}{22}{Lap round-robin: the pit wall dispatches \texttt {lap\_go} tokens in order, accumulates lap times, and increments the lap counter after the last car}{figure.3}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {7.3}Safety Car Deployment}{23}{subsection.7.3}\protected@file@percent }
 \@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Safety car chain: pit wall deploys the safety car and notifies all cars; at the end of the lap the safety car is recalled and the green flag is broadcast.}}{23}{figure.4}\protected@file@percent }
 \newlabel{fig:seq_sc}{{4}{23}{Safety car chain: pit wall deploys the safety car and notifies all cars; at the end of the lap the safety car is recalled and the green flag is broadcast}{figure.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.4}Engine Failure (DNF)}{24}{subsection.7.4}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Engine failure: a car's internal event notifies the pit wall, which sets the DNF time, retires the car, and immediately calls \texttt  {declare\_winner}.}}{24}{figure.5}\protected@file@percent }
-\newlabel{fig:seq_dnf}{{5}{24}{Engine failure: a car's internal event notifies the pit wall, which sets the DNF time, retires the car, and immediately calls \texttt {declare\_winner}}{figure.5}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.5}Push Lap (Fastest-Lap Bonus)}{25}{subsection.7.5}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Push lap: a car's internal event fires at most once per lap and notifies the pit wall, which deducts $3\,\text  {s}$ from the car's accumulated time.}}{25}{figure.6}\protected@file@percent }
-\newlabel{fig:seq_push}{{6}{25}{Push lap: a car's internal event fires at most once per lap and notifies the pit wall, which deducts $3\,\text {s}$ from the car's accumulated time}{figure.6}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {8}Timing System}{25}{section.8}\protected@file@percent }
 \gdef \LT@vii {\LT@entry 
     {2}{174.79897pt}\LT@entry 
     {2}{137.39142pt}}
-\@writefile{toc}{\contentsline {section}{\numberline {9}How to Run}{26}{section.9}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {9.1}Native (WSL / Linux) --- Not recommended}{26}{subsection.9.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {9.2}Web Dashboard --- Recommended}{26}{subsection.9.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.4}Engine Failure (DNF)}{24}{subsection.7.4}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Engine failure: a car's internal event notifies the pit wall, which sets the DNF time, retires the car, and immediately calls \texttt  {declare\_winner}.}}{24}{figure.5}\protected@file@percent }
+\newlabel{fig:seq_dnf}{{5}{24}{Engine failure: a car's internal event notifies the pit wall, which sets the DNF time, retires the car, and immediately calls \texttt {declare\_winner}}{figure.5}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {8}Timing System}{24}{section.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9}How to Run}{25}{section.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.1}Native (WSL / Linux) --- Not recommended}{25}{subsection.9.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.2}Web Dashboard --- Recommended}{25}{subsection.9.2}\protected@file@percent }
 \gdef \LT@viii {\LT@entry 
     {2}{124.1198pt}\LT@entry 
     {1}{262.0748pt}}
-\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Web dashboard --- Logs tab: agent panes with real-time output, control buttons and command bar.}}{27}{figure.7}\protected@file@percent }
-\newlabel{fig:ui_consoles}{{7}{27}{Web dashboard --- Logs tab: agent panes with real-time output, control buttons and command bar}{figure.7}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {9.2.1}Dashboard Controls}{27}{subsubsection.9.2.1}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Final podium modal displayed at race end, showing driver positions and total accumulated times.}}{28}{figure.8}\protected@file@percent }
-\newlabel{fig:ui_podium}{{8}{28}{Final podium modal displayed at race end, showing driver positions and total accumulated times}{figure.8}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {9.2.2}Circuit Tab}{28}{subsubsection.9.2.2}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Web dashboard --- Circuit tab: animated Catmull-Rom track with car positions, start lights and live leaderboard sidebar.}}{29}{figure.9}\protected@file@percent }
-\newlabel{fig:ui_circuit}{{9}{29}{Web dashboard --- Circuit tab: animated Catmull-Rom track with car positions, start lights and live leaderboard sidebar}{figure.9}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {10}Docker Deployment}{29}{section.10}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {10.1}Architecture}{29}{subsection.10.1}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces Docker Compose architecture: the \texttt  {mas} and \texttt  {ui} containers share a tmux socket volume.}}{29}{figure.10}\protected@file@percent }
-\newlabel{fig:docker_arch}{{10}{29}{Docker Compose architecture: the \texttt {mas} and \texttt {ui} containers share a tmux socket volume}{figure.10}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Web dashboard --- Logs tab: agent panes with real-time output, control buttons and command bar.}}{26}{figure.6}\protected@file@percent }
+\newlabel{fig:ui_consoles}{{6}{26}{Web dashboard --- Logs tab: agent panes with real-time output, control buttons and command bar}{figure.6}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {9.2.1}Dashboard Controls}{26}{subsubsection.9.2.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Final podium modal displayed at race end, showing driver positions and total accumulated times.}}{27}{figure.7}\protected@file@percent }
+\newlabel{fig:ui_podium}{{7}{27}{Final podium modal displayed at race end, showing driver positions and total accumulated times}{figure.7}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {9.2.2}Circuit Tab}{27}{subsubsection.9.2.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Web dashboard --- Circuit tab: animated Catmull-Rom track with car positions, start lights and live leaderboard sidebar.}}{28}{figure.8}\protected@file@percent }
+\newlabel{fig:ui_circuit}{{8}{28}{Web dashboard --- Circuit tab: animated Catmull-Rom track with car positions, start lights and live leaderboard sidebar}{figure.8}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {10}Docker Deployment}{28}{section.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {10.1}Architecture}{28}{subsection.10.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Docker Compose architecture: the \texttt  {mas} and \texttt  {ui} containers share a tmux socket volume.}}{28}{figure.9}\protected@file@percent }
+\newlabel{fig:docker_arch}{{9}{28}{Docker Compose architecture: the \texttt {mas} and \texttt {ui} containers share a tmux socket volume}{figure.9}{}}
 \gdef \LT@ix {\LT@entry 
     {2}{80.08192pt}\LT@entry 
     {2}{153.99034pt}\LT@entry 
     {1}{205.16928pt}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {10.2}Quickstart}{30}{subsection.10.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {10.3}Environment Variables}{30}{subsection.10.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {11}Shutdown}{30}{section.11}\protected@file@percent }
-\gdef \@abspage@last{30}
+\@writefile{toc}{\contentsline {subsection}{\numberline {10.2}Quickstart}{29}{subsection.10.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {10.3}Environment Variables}{29}{subsection.10.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {11}Shutdown}{29}{section.11}\protected@file@percent }
+\gdef \@abspage@last{29}

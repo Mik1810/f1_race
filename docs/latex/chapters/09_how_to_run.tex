@@ -1,7 +1,7 @@
 \section{How to Run}
 
 \subsection{Native (WSL / Linux) --- Not recommended}
-The configurations can be a little messy because requires the SICSTus interpreter and the DALI logic, but here are presente a step-by-step guide:
+The configurations can be a little messy because requires the SICStus interpreter and the DALI logic, but here are presente a step-by-step guide:
 \begin{enumerate}
   \item Clone the DALI repo from \url{https://github.com/AAAI-DISIM-UnivAQ/DALI} and navigate to the \texttt{DALI/Examples} folder.
   \item Clone the GitHub repo project from \url{https://github.com/Mik1810/f1_dali_project} under \texttt{Examples} folder.
@@ -78,9 +78,9 @@ Minimise button ($-$)   & Minimises pane to tray \\
 The dashboard exposes two tabs selectable via the tab bar at the top of the page:
 
 \begin{itemize}[leftmargin=2em]
-  \item \textbf{Logs} --- the default view showing all agent panes side-by-side with
+  \item \textbf{Logs}: the default view showing all agent panes side-by-side with
         real-time output.
-  \item \textbf{Circuit} --- an animated canvas visualisation of the race circuit.
+  \item \textbf{Circuit}:  an animated canvas visualisation of the race circuit.
 \end{itemize}
 
 \noindent
@@ -88,20 +88,20 @@ Clicking a tab label switches the view instantly; no page reload is required. Th
 \texttt{Logs} tab remains fully active in the background (polling continues) while
 the \texttt{Circuit} tab is open, so no agent output is ever lost.
 
-The \textbf{Circuit tab} renders a Catmull-Rom spline track on an HTML5 Canvas and
+The \textbf{Circuit tab} renders a track on an canva and
 animates each car along it in proportional time. Key features include:
 
 \begin{itemize}[leftmargin=2em]
-  \item \textbf{Start lights sequence} --- five red lights illuminate one per second
+  \item \textbf{Start lights sequence}:  five red lights illuminate one per second
         before going out at race start, matching the semaphore agent's timing.
-  \item \textbf{Car tokens} --- each car is drawn as a coloured dot with its team
+  \item \textbf{Car tokens}: each car is drawn as a coloured dot with its team
         border glow, a lap-count badge, and a driver label. Position on track reflects
         the real fraction of the lap elapsed.
-  \item \textbf{Pit-stop indicator} --- a car entering the pit lane is shown as
+  \item \textbf{Pit-stop indicator}: a car entering the pit lane is shown as
         stationary in the pit area for the duration of the stop.
-  \item \textbf{Live sidebar} --- an always-visible leaderboard lists cars in current
+  \item \textbf{Live sidebar}: an always-visible leaderboard lists cars in current
         race order with their accumulated times, updated after every lap.
-  \item \textbf{Final podium} --- once the race ends and all animations have played
+  \item \textbf{Final podium}: once the race ends and all animations have played
         out, a modal overlay shows the final standings with positions and total times.
 \end{itemize}
 

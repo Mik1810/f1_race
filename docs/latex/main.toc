@@ -26,15 +26,14 @@
 \contentsline {subsection}{\numberline {7.2}Lap Round-Robin}{22}{subsection.7.2}%
 \contentsline {subsection}{\numberline {7.3}Safety Car Deployment}{23}{subsection.7.3}%
 \contentsline {subsection}{\numberline {7.4}Engine Failure (DNF)}{24}{subsection.7.4}%
-\contentsline {subsection}{\numberline {7.5}Push Lap (Fastest-Lap Bonus)}{25}{subsection.7.5}%
-\contentsline {section}{\numberline {8}Timing System}{25}{section.8}%
-\contentsline {section}{\numberline {9}How to Run}{26}{section.9}%
-\contentsline {subsection}{\numberline {9.1}Native (WSL / Linux) --- Not recommended}{26}{subsection.9.1}%
-\contentsline {subsection}{\numberline {9.2}Web Dashboard --- Recommended}{26}{subsection.9.2}%
-\contentsline {subsubsection}{\numberline {9.2.1}Dashboard Controls}{27}{subsubsection.9.2.1}%
-\contentsline {subsubsection}{\numberline {9.2.2}Circuit Tab}{28}{subsubsection.9.2.2}%
-\contentsline {section}{\numberline {10}Docker Deployment}{29}{section.10}%
-\contentsline {subsection}{\numberline {10.1}Architecture}{29}{subsection.10.1}%
-\contentsline {subsection}{\numberline {10.2}Quickstart}{30}{subsection.10.2}%
-\contentsline {subsection}{\numberline {10.3}Environment Variables}{30}{subsection.10.3}%
-\contentsline {section}{\numberline {11}Shutdown}{30}{section.11}%
+\contentsline {section}{\numberline {8}Timing System}{24}{section.8}%
+\contentsline {section}{\numberline {9}How to Run}{25}{section.9}%
+\contentsline {subsection}{\numberline {9.1}Native (WSL / Linux) --- Not recommended}{25}{subsection.9.1}%
+\contentsline {subsection}{\numberline {9.2}Web Dashboard --- Recommended}{25}{subsection.9.2}%
+\contentsline {subsubsection}{\numberline {9.2.1}Dashboard Controls}{26}{subsubsection.9.2.1}%
+\contentsline {subsubsection}{\numberline {9.2.2}Circuit Tab}{27}{subsubsection.9.2.2}%
+\contentsline {section}{\numberline {10}Docker Deployment}{28}{section.10}%
+\contentsline {subsection}{\numberline {10.1}Architecture}{28}{subsection.10.1}%
+\contentsline {subsection}{\numberline {10.2}Quickstart}{29}{subsection.10.2}%
+\contentsline {subsection}{\numberline {10.3}Environment Variables}{29}{subsection.10.3}%
+\contentsline {section}{\numberline {11}Shutdown}{29}{section.11}%
