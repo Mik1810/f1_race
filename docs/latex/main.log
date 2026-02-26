@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (MiKTeX 25.4) (preloaded format=pdflatex 2025.9.9)  27 FEB 2026 00:07
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (MiKTeX 25.4) (preloaded format=pdflatex 2025.9.9)  27 FEB 2026 00:08
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -821,7 +821,9 @@ Package pdftex.def Info: ../../imgs/06_class_diagram.png  used on input line 8.
 (pdftex.def)             Requested size: 455.24411pt x 295.65488pt.
 
 
-[4 <../../imgs/06_class_diagram.png>]
+[4]
+
+[5 <../../imgs/06_class_diagram.png>]
 Overfull \hbox (0.41904pt too wide) in paragraph at lines 56--61
 \T1/cmtt/m/n/12 mas/types/ferrariCar.txt \T1/cmr/m/n/12 is gen-er-ated by \T1/cmtt/m/n/12 generate_-agents.py \T1/cmr/m/n/12 from the \T1/cmtt/m/n/12 agents.json
  []
@@ -834,8 +836,6 @@ Underfull \hbox (badness 10000) in paragraph at lines 56--61
 LaTeX Font Info:    Font shape `T1/cmtt/bx/n' in size <10.95> not available
 (Font)              Font shape `T1/cmtt/m/n' tried instead on input line 66.
 
-
-[5]
 Underfull \hbox (badness 10000) in paragraph at lines 83--86
 
  []
@@ -846,13 +846,13 @@ Underfull \hbox (badness 10000) in paragraph at lines 89--91
  []
 
 
+
+[6]
 Underfull \hbox (badness 10000) in paragraph at lines 109--111
 
  []
 
 
-
-[6]
 Underfull \hbox (badness 10000) in paragraph at lines 141--144
 
  []
@@ -863,6 +863,8 @@ Underfull \hbox (badness 10000) in paragraph at lines 159--160
  []
 
 
+
+[7]
 Underfull \hbox (badness 10000) in paragraph at lines 171--173
 
  []
@@ -874,16 +876,14 @@ Underfull \hbox (badness 10000) in paragraph at lines 183--187
 
 
 
-[7]
+[8]
 Underfull \hbox (badness 10000) in paragraph at lines 233--240
 
  []
 
-
-
-[8]
-
 [9]
+
+[10]
 Underfull \hbox (badness 10000) in paragraph at lines 329--333
 
  []
@@ -905,7 +905,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 378--383
 
 
 
-[10]
+[11]
 Underfull \hbox (badness 10000) in paragraph at lines 413--414
 
  []
@@ -917,14 +917,14 @@ Underfull \hbox (badness 10000) in paragraph at lines 436--443
 
 
 
-[11]
+[12]
 Underfull \hbox (badness 10000) in paragraph at lines 464--465
 
  []
 
 
 
-[12]
+[13]
 Overfull \hbox (3.9192pt too wide) in paragraph at lines 496--499
 []\T1/cmr/m/n/12 If the to-tal lap count equals 5, calls \T1/cmtt/m/n/12 declare_-winner\T1/cmr/m/n/12 ; oth-er-wise rolls an-other \T1/cmtt/m/n/12 random_-
  []
@@ -946,7 +946,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 537--540
 
 
 
-[13]
+[14]
 Underfull \hbox (badness 10000) in paragraph at lines 559--563
 
  []
@@ -966,7 +966,7 @@ Overfull \hbox (47.82751pt too wide) in alignment at lines 591--617
  [] [] 
  []
 
-[14]
+[15]
 Underfull \hbox (badness 10000) in paragraph at lines 622--627
 
  []
@@ -978,14 +978,14 @@ Underfull \hbox (badness 10000) in paragraph at lines 638--644
 
 
 
-[15]
+[16]
 Underfull \hbox (badness 10000) in paragraph at lines 667--674
 
  []
 
 
 
-[16]
+[17]
 Overfull \hbox (16.04381pt too wide) in paragraph at lines 703--707
 []\T1/cmr/m/n/12 When the count reaches the thresh-old (here hard-coded to 4, gen-er-ated from \T1/cmtt/m/n/12 agents.json
  []
@@ -1017,7 +1017,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 766--771
 
 
 
-[17]
+[18]
 Overfull \hbox (5.18945pt too wide) in paragraph at lines 794--797
 \T1/cmr/m/n/12 This com-pletes the three-step safety-car chain: \T1/cmtt/m/n/12 random_-track_-event \T1/cmr/m/n/12 (Pit-Wall) $\OMS/cmsy/m/n/12 !$ \T1/cmtt/m/n/12 recallE
  []
@@ -1029,45 +1029,45 @@ Underfull \hbox (badness 10000) in paragraph at lines 794--797
 
 ) (chapters/05_dynamic_agents.tex
 
-[18]) (chapters/06_race_flow.tex
+[19]) (chapters/06_race_flow.tex
 
-[19]) (chapters/07_sequence_diagrams.tex
+[20]) (chapters/07_sequence_diagrams.tex
 Overfull \hbox (9.70923pt too wide) in paragraph at lines 35--2
 \T1/cmr/m/n/12 At any point a car's \T1/cmr/m/it/12 in-ter-nal events \T1/cmr/m/n/12 (\T1/cmtt/m/n/12 engine_-failureI \T1/cmr/m/n/12 or \T1/cmtt/m/n/12 push_-lapI\T1/cmr/m/n/12 ) can fire au-tonomously
  []
 
-<../../imgs/01_startup.png, id=623, 1204.5pt x 823.075pt>
+<../../imgs/01_startup.png, id=628, 1204.5pt x 823.075pt>
 File: ../../imgs/01_startup.png Graphic file (type png)
 <use ../../imgs/01_startup.png>
 Package pdftex.def Info: ../../imgs/01_startup.png  used on input line 11.
 (pdftex.def)             Requested size: 455.24411pt x 311.08882pt.
 
 
-[20]
-<../../imgs/02_lap_roundrobin.png, id=635, 1204.5pt x 1534.73375pt>
+[21]
+<../../imgs/02_lap_roundrobin.png, id=640, 1204.5pt x 1534.73375pt>
 File: ../../imgs/02_lap_roundrobin.png Graphic file (type png)
 <use ../../imgs/02_lap_roundrobin.png>
 Package pdftex.def Info: ../../imgs/02_lap_roundrobin.png  used on input line 22.
 (pdftex.def)             Requested size: 455.24411pt x 580.06686pt.
 
 
-[21 <../../imgs/01_startup.png>]
-<../../imgs/03_safety_car.png, id=642, 1204.5pt x 1365.1pt>
+[22 <../../imgs/01_startup.png>]
+<../../imgs/03_safety_car.png, id=647, 1204.5pt x 1365.1pt>
 File: ../../imgs/03_safety_car.png Graphic file (type png)
 <use ../../imgs/03_safety_car.png>
 Package pdftex.def Info: ../../imgs/03_safety_car.png  used on input line 32.
 (pdftex.def)             Requested size: 455.24411pt x 515.95221pt.
 
 
-[22 <../../imgs/02_lap_roundrobin.png>]
-<../../imgs/04_engine_failure.png, id=649, 1204.5pt x 1284.8pt>
+[23 <../../imgs/02_lap_roundrobin.png>]
+<../../imgs/04_engine_failure.png, id=654, 1204.5pt x 1284.8pt>
 File: ../../imgs/04_engine_failure.png Graphic file (type png)
 <use ../../imgs/04_engine_failure.png>
 Package pdftex.def Info: ../../imgs/04_engine_failure.png  used on input line 42.
 (pdftex.def)             Requested size: 455.24411pt x 485.60208pt.
 ) (chapters/08_timing.tex
 
-[23 <../../imgs/03_safety_car.png>] [24 <../../imgs/04_engine_failure.png>]) (chapters/09_how_to_run.tex
+[24 <../../imgs/03_safety_car.png>] [25 <../../imgs/04_engine_failure.png>]) (chapters/09_how_to_run.tex
 Overfull \hbox (16.22688pt too wide) in paragraph at lines 7--8
 []\T1/cmr/m/n/12 Clone the GitHub repo project from []$\T1/cmtt/m/n/12 https : / / github . com / Mik1810 / f1 _ dali _ project$[]
  []
@@ -1086,39 +1086,39 @@ Underfull \hbox (badness 10000) in paragraph at lines 26--29
 
  []
 
-<../../imgs/07_consoles.png, id=666, 1927.2pt x 1084.05pt>
+<../../imgs/07_consoles.png, id=672, 1927.2pt x 1084.05pt>
 File: ../../imgs/07_consoles.png Graphic file (type png)
 <use ../../imgs/07_consoles.png>
 Package pdftex.def Info: ../../imgs/07_consoles.png  used on input line 47.
 (pdftex.def)             Requested size: 455.24411pt x 256.07509pt.
 
 
-[25]
-<../../imgs/08_podium.png, id=683, 1927.2pt x 1084.05pt>
+[26]
+<../../imgs/08_podium.png, id=688, 1927.2pt x 1084.05pt>
 File: ../../imgs/08_podium.png Graphic file (type png)
 <use ../../imgs/08_podium.png>
 Package pdftex.def Info: ../../imgs/08_podium.png  used on input line 71.
 (pdftex.def)             Requested size: 455.24411pt x 256.07509pt.
 
 
-[26 <../../imgs/07_consoles.png>]
-<../../imgs/09_circuit.png, id=691, 1927.2pt x 1084.05pt>
+[27 <../../imgs/07_consoles.png>]
+<../../imgs/09_circuit.png, id=696, 1927.2pt x 1084.05pt>
 File: ../../imgs/09_circuit.png Graphic file (type png)
 <use ../../imgs/09_circuit.png>
 Package pdftex.def Info: ../../imgs/09_circuit.png  used on input line 110.
 (pdftex.def)             Requested size: 455.24411pt x 256.07509pt.
 ) (chapters/10_docker.tex
 
-[27 <../../imgs/08_podium.png>]
+[28 <../../imgs/08_podium.png>]
 
-[28 <../../imgs/09_circuit.png>]
+[29 <../../imgs/09_circuit.png>]
 Overfull \hbox (16.22688pt too wide) in paragraph at lines 58--59
 []\T1/cmr/m/n/12 Clone the GitHub repo project from []$\T1/cmtt/m/n/12 https : / / github . com / Mik1810 / f1 _ dali _ project$[]
  []
 
 ) (chapters/12_patch_system.tex
 
-[29]
+[30]
 Overfull \hbox (6.01295pt too wide) in paragraph at lines 27--30
 []\T1/cmr/bx/n/12 Address prop-a-ga-tion to agents\T1/cmr/m/n/12 : \T1/cmtt/m/n/12 active_-dali_-wi.pl \T1/cmr/m/n/12 was hard-coded to [][][]
  []
@@ -1132,9 +1132,9 @@ Underfull \hbox (badness 10000) in paragraph at lines 3--121
 
 
 
-[30]
+[31]
 
-[31] (main.aux)
+[32] (main.aux)
  ***********
 LaTeX2e <2025-06-01>
 L3 programming layer <2025-05-26>
@@ -1143,17 +1143,17 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 19436929497052BD5605C783580008D5;5676.
  ) 
 Here is how much of TeX's memory you used:
- 35932 strings out of 468225
- 767542 string characters out of 5432974
+ 35934 strings out of 468225
+ 767564 string characters out of 5432974
  1647225 words of memory out of 5000000
  63453 multiletter control sequences out of 15000+600000
  647943 words of font info for 94 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  98i,9n,101p,1666b,1302s stack positions out of 10000i,1000n,20000p,200000b,200000s
  <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ectt1440.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecit1095.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ectt1000.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm1000.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm0700.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ectt1095.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm0600.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm0800.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ectt0800.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\tcrm1200.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecti1200.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecbx1440.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm1095.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecbx1095.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ectt1200.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm1200.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecbx1200.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecbx1728.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm1440.pk> <C:\Users\micha\AppData\Local\MiKTeX\fonts/pk/ljfour/jknappen/ec/dpi600\ecrm1728.pk><C:/Users/micha/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi12.pfb><C:/Users/micha/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr12.pfb><C:/Users/micha/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb>
-Output written on c:/Users\micha\Desktop\Dali_project\DALI\Examples\f1_race\docs\latex\main.pdf (31 pages, 1241622 bytes).
+Output written on c:/Users\micha\Desktop\Dali_project\DALI\Examples\f1_race\docs\latex\main.pdf (32 pages, 1243341 bytes).
 PDF statistics:
- 1636 PDF objects out of 1728 (max. 8388607)
- 452 named destinations out of 1000 (max. 500000)
+ 1641 PDF objects out of 1728 (max. 8388607)
+ 454 named destinations out of 1000 (max. 500000)
  365 words of extra memory for PDF output out of 10000 (max. 10000000)
 

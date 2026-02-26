@@ -4,41 +4,41 @@
 \contentsline {subsection}{\numberline {1.2}Project Goals}{3}{subsection.1.2}%
 \contentsline {section}{\numberline {2}System Requirements}{3}{section.2}%
 \contentsline {section}{\numberline {3}Project Structure}{4}{section.3}%
-\contentsline {section}{\numberline {4}Agents}{4}{section.4}%
-\contentsline {subsection}{\numberline {4.1}Class Diagram}{4}{subsection.4.1}%
+\contentsline {section}{\numberline {4}Agents}{5}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Class Diagram}{5}{subsection.4.1}%
 \contentsline {paragraph}{CarAgent \textnormal {(one instance per car, dynamically generated)}}{5}{paragraph*.1}%
 \contentsline {paragraph}{PitWallAgent}{5}{paragraph*.2}%
-\contentsline {paragraph}{SemaphoreAgent}{5}{paragraph*.3}%
-\contentsline {paragraph}{SafetyCarAgent}{5}{paragraph*.4}%
-\contentsline {subsection}{\numberline {4.2}DALI semantycs}{5}{subsection.4.2}%
-\contentsline {subsubsection}{\numberline {4.2.1}CarAgent: FerrariAgent, McLarenAgent, ...}{5}{subsubsection.4.2.1}%
-\contentsline {subsubsection}{\numberline {4.2.2}PitWallAgent}{10}{subsubsection.4.2.2}%
-\contentsline {subsubsection}{\numberline {4.2.3}SemaphoreAgent}{15}{subsubsection.4.2.3}%
-\contentsline {subsubsection}{\numberline {4.2.4}SafetyCarAgent}{17}{subsubsection.4.2.4}%
-\contentsline {section}{\numberline {5}Dynamic Agent System}{18}{section.5}%
-\contentsline {subsection}{\numberline {5.1}Code Generation Pipeline}{18}{subsection.5.1}%
-\contentsline {subsection}{\numberline {5.2}Adding or Removing a Car}{19}{subsection.5.2}%
-\contentsline {section}{\numberline {6}Race Flow}{20}{section.6}%
-\contentsline {subsection}{\numberline {6.1}Startup Sequence}{20}{subsection.6.1}%
-\contentsline {subsection}{\numberline {6.2}Lap Round-Robin}{20}{subsection.6.2}%
-\contentsline {section}{\numberline {7}Sequence Diagrams}{20}{section.7}%
-\contentsline {subsection}{\numberline {7.1}Startup Sequence}{21}{subsection.7.1}%
-\contentsline {subsection}{\numberline {7.2}Lap Round-Robin}{22}{subsection.7.2}%
-\contentsline {subsection}{\numberline {7.3}Safety Car Deployment}{23}{subsection.7.3}%
-\contentsline {subsection}{\numberline {7.4}Engine Failure (DNF)}{24}{subsection.7.4}%
-\contentsline {section}{\numberline {8}Timing System}{24}{section.8}%
-\contentsline {section}{\numberline {9}How to Run}{25}{section.9}%
-\contentsline {subsection}{\numberline {9.1}Native (WSL / Linux) --- Not recommended}{25}{subsection.9.1}%
-\contentsline {subsection}{\numberline {9.2}Web Dashboard --- Recommended}{25}{subsection.9.2}%
-\contentsline {subsubsection}{\numberline {9.2.1}Dashboard Controls}{26}{subsubsection.9.2.1}%
-\contentsline {subsubsection}{\numberline {9.2.2}Circuit Tab}{27}{subsubsection.9.2.2}%
-\contentsline {section}{\numberline {10}Docker Deployment}{28}{section.10}%
-\contentsline {subsection}{\numberline {10.1}Architecture}{28}{subsection.10.1}%
-\contentsline {subsection}{\numberline {10.2}Quickstart}{29}{subsection.10.2}%
-\contentsline {subsection}{\numberline {10.3}Environment Variables}{29}{subsection.10.3}%
-\contentsline {section}{\numberline {11}DALI Source Patch System}{29}{section.11}%
-\contentsline {subsection}{\numberline {11.1}Motivation}{29}{subsection.11.1}%
-\contentsline {subsection}{\numberline {11.2}Structure}{30}{subsection.11.2}%
-\contentsline {subsection}{\numberline {11.3}Idempotency: the \texttt {[F1\_PATCH]} Marker}{30}{subsection.11.3}%
-\contentsline {subsection}{\numberline {11.4}Reverting the Patches}{30}{subsection.11.4}%
-\contentsline {section}{\numberline {12}Shutdown}{31}{section.12}%
+\contentsline {paragraph}{SemaphoreAgent}{6}{paragraph*.3}%
+\contentsline {paragraph}{SafetyCarAgent}{6}{paragraph*.4}%
+\contentsline {subsection}{\numberline {4.2}DALI semantycs}{6}{subsection.4.2}%
+\contentsline {subsubsection}{\numberline {4.2.1}CarAgent: FerrariAgent, McLarenAgent, ...}{6}{subsubsection.4.2.1}%
+\contentsline {subsubsection}{\numberline {4.2.2}PitWallAgent}{11}{subsubsection.4.2.2}%
+\contentsline {subsubsection}{\numberline {4.2.3}SemaphoreAgent}{16}{subsubsection.4.2.3}%
+\contentsline {subsubsection}{\numberline {4.2.4}SafetyCarAgent}{18}{subsubsection.4.2.4}%
+\contentsline {section}{\numberline {5}Dynamic Agent System}{19}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Code Generation Pipeline}{19}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Adding or Removing a Car}{20}{subsection.5.2}%
+\contentsline {section}{\numberline {6}Race Flow}{21}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Startup Sequence}{21}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Lap Round-Robin}{21}{subsection.6.2}%
+\contentsline {section}{\numberline {7}Sequence Diagrams}{21}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Startup Sequence}{22}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}Lap Round-Robin}{23}{subsection.7.2}%
+\contentsline {subsection}{\numberline {7.3}Safety Car Deployment}{24}{subsection.7.3}%
+\contentsline {subsection}{\numberline {7.4}Engine Failure (DNF)}{25}{subsection.7.4}%
+\contentsline {section}{\numberline {8}Timing System}{25}{section.8}%
+\contentsline {section}{\numberline {9}How to Run}{26}{section.9}%
+\contentsline {subsection}{\numberline {9.1}Native (WSL / Linux) --- Not recommended}{26}{subsection.9.1}%
+\contentsline {subsection}{\numberline {9.2}Web Dashboard --- Recommended}{26}{subsection.9.2}%
+\contentsline {subsubsection}{\numberline {9.2.1}Dashboard Controls}{27}{subsubsection.9.2.1}%
+\contentsline {subsubsection}{\numberline {9.2.2}Circuit Tab}{28}{subsubsection.9.2.2}%
+\contentsline {section}{\numberline {10}Docker Deployment}{29}{section.10}%
+\contentsline {subsection}{\numberline {10.1}Architecture}{29}{subsection.10.1}%
+\contentsline {subsection}{\numberline {10.2}Quickstart}{30}{subsection.10.2}%
+\contentsline {subsection}{\numberline {10.3}Environment Variables}{30}{subsection.10.3}%
+\contentsline {section}{\numberline {11}DALI Source Patch System}{30}{section.11}%
+\contentsline {subsection}{\numberline {11.1}Motivation}{30}{subsection.11.1}%
+\contentsline {subsection}{\numberline {11.2}Structure}{31}{subsection.11.2}%
+\contentsline {subsection}{\numberline {11.3}Idempotency: the \texttt {[F1\_PATCH]} Marker}{31}{subsection.11.3}%
+\contentsline {subsection}{\numberline {11.4}Reverting the Patches}{31}{subsection.11.4}%
+\contentsline {section}{\numberline {12}Shutdown}{32}{section.12}%
