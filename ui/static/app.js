@@ -149,30 +149,32 @@ function hideOverlay() {
 
 /** Kill SICStus, destroy tmux session and relaunch via startmas.sh. */
 async function restartMas() {
+  // Guard against double-clicks or concurrent calls.
+  if (restarting) return;
+  restarting = true;
+
   // Phase 1: overlay visible while the HTTP call is in flight.
-  // restarting is still false — the poll won't touch the overlay yet.
   showOverlay('Restarting MAS…', 'Sending kill signal to SICStus');
   try {
     const r = await fetch('/api/restart', { method: 'POST' });
     const data = await r.json();
-    if (data.error) {
+    if (!data.ok) {
+      restarting = false;
       hideOverlay();
-      alert('Restart failed: ' + data.error);
+      alert('Restart failed: ' + (data.reason || data.error || 'unknown error'));
       return;
     }
   } catch (e) {
+    restarting = false;
     hideOverlay();
     alert('Restart request failed: ' + e);
     return;
   }
   // Phase 2: API returned — startmas.sh is running in background.
-  // Set restarting = true AFTER the await so the poll could not have
-  // already cleared it while we were waiting for the response.
   clearAll();
   closeLeaderboard();
   lbShown = false;          // new race — allow results modal to appear again
   _pendingLbResults = null; // discard any held leaderboard from previous race
-  restarting = true;
   showOverlay('Waiting for agents…', 'LINDA server starting on port 3010');
 
   // Safety net: hide overlay after 90 s if MAS never comes back.
@@ -247,10 +249,15 @@ function poll() {
       document.getElementById('led').className = 'on';
       document.getElementById('lbl').textContent = 'live \u2022 1s refresh';
       if (restarting) {
-        // Hide only when the server pane is actually available in tmux
-        // (not showing the "[pane '...' not available]" placeholder).
+        // Hide the overlay only when BOTH the server pane and the user-agent
+        // pane are available and have content.  Waiting for the user pane
+        // ensures all other agent panes have also started, so the console
+        // view is never empty when the overlay disappears.
         const serverText = data['server'] || '';
-        if (serverText && !serverText.startsWith('[pane')) {
+        const userText   = data['user']   || '';
+        const serverReady = serverText && !serverText.startsWith('[pane');
+        const userReady   = userText   && !userText.startsWith('[pane');
+        if (serverReady && userReady) {
           restarting = false;
           hideOverlay();
         } else {

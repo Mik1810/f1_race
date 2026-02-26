@@ -152,6 +152,12 @@ const MIN_LAP_MS       = 2_000; // floor: safety net only, must not equalise lap
 const PIT_DISPLAY_MS   = 4_000; // how long the car sits in the pit-lane
 const LIGHTS_OUT_DELAY = 5_200; // ms — red-lights sequence before cars move
 
+/* Pit lane geometry — parallel strip just inside (above) the main straight */
+const PIT_Y   = 416;                           // pit strip centre y
+const PIT_X0  = 207;                           // left end:  pit exit  (near S/F)
+const PIT_X1  = 548;                           // right end: pit entry (near T1)
+const PIT_MID = ((PIT_X0 + PIT_X1) / 2) | 0; // garage midpoint x
+
 /**
  * Per-car anim record:
  *   queue          – pending events [{type, durationMs}]
@@ -179,6 +185,15 @@ let _raceStartedAt   = 0;
  * guaranteeing a perfectly synchronised start regardless of API poll order.
  */
 let _animationBarrier = null;
+
+/**
+ * Set to true whenever race_over is reported but the animation queue has not
+ * yet drained.  renderFrame() watches this and refreshes the sidebar the
+ * exact frame circuitQueueDrained() flips to true, so the user sees
+ * "Race finished" and the end-of-race events without waiting for the next
+ * 2 s API poll.
+ */
+let _raceOverGatePending = false;
 
 function _blankAnim(id) {
   return {
@@ -254,9 +269,10 @@ function updateCarAnim(data) {
   if (_prevRaceOver && !raceOver) {
     // Normal cycle: race finished → new race starting.
     for (const key of Object.keys(carAnim)) delete carAnim[key];
-    _prevRaceStarted  = false;
-    _raceStartedAt    = 0;
-    _animationBarrier = null;
+    _prevRaceStarted     = false;
+    _raceStartedAt       = 0;
+    _animationBarrier    = null;
+    _raceOverGatePending = false;
   } else {
     // Mid-race MAS restart: detect by laps_completed decreasing below what
     // we already enqueued for any car.  This is the only reliable signal that
@@ -266,14 +282,21 @@ function updateCarAnim(data) {
       if (a && car.laps_completed < a.enqueuedLaps) {
         // This car has fewer laps than we already animated → new race.
         for (const key of Object.keys(carAnim)) delete carAnim[key];
-        _prevRaceStarted  = false;
-        _raceStartedAt    = 0;
-        _animationBarrier = null;
+        _prevRaceStarted     = false;
+        _raceStartedAt       = 0;
+        _animationBarrier    = null;
+        _raceOverGatePending = false;
         break;
       }
     }
   }
   _prevRaceOver = raceOver;
+
+  // If the race is over but the queue hasn't drained yet, flag that we need
+  // to refresh the sidebar once the last lap animation finishes.
+  if (raceOver && !circuitQueueDrained()) {
+    _raceOverGatePending = true;
+  }
 
   // Record the exact moment the race first starts so all cars sync.
   if (raceStarted && !_prevRaceStarted) {
@@ -442,6 +465,9 @@ function drawTrack(ctx) {
   _drawKerb(ctx, 0.19, '#cc2200');  // Chicane 1
   _drawKerb(ctx, 0.29, '#cc2200');  // Chicane 2 (wider)
   _drawKerb(ctx, 0.59, '#2266cc');  // Hairpin apex
+
+  /* ── Pit lane ── */
+  drawPitLane(ctx);
 }
 
 function _strokeSpline(ctx) {
@@ -470,6 +496,35 @@ function _drawKerb(ctx, t, colour) {
     );
     ctx.fill();
   }
+}
+
+/** Draw the pit lane strip inside (above) the main straight. */
+function drawPitLane(ctx) {
+  const STRIP_H = 8;
+  /* asphalt strip */
+  ctx.fillStyle = '#2d2d2d';
+  ctx.fillRect(PIT_X0, PIT_Y - STRIP_H / 2, PIT_X1 - PIT_X0, STRIP_H);
+  /* boundary lines */
+  ctx.strokeStyle = '#ffffff40';
+  ctx.lineWidth   = 1;
+  ctx.beginPath();
+  ctx.moveTo(PIT_X0, PIT_Y - STRIP_H / 2); ctx.lineTo(PIT_X1, PIT_Y - STRIP_H / 2);
+  ctx.moveTo(PIT_X0, PIT_Y + STRIP_H / 2); ctx.lineTo(PIT_X1, PIT_Y + STRIP_H / 2);
+  ctx.stroke();
+  /* dashed connectors to track level */
+  ctx.setLineDash([3, 3]);
+  ctx.strokeStyle = '#ffffff25';
+  ctx.beginPath();
+  ctx.moveTo(PIT_X1, 440); ctx.lineTo(PIT_X1, PIT_Y + STRIP_H / 2);
+  ctx.moveTo(PIT_X0, 440); ctx.lineTo(PIT_X0, PIT_Y + STRIP_H / 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  /* label */
+  ctx.fillStyle    = '#66666688';
+  ctx.font         = '5px monospace';
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('PIT LANE', (PIT_X0 + PIT_X1) / 2, PIT_Y);
 }
 
 /** Draw a safety-car overlay blink if SC is active. */
@@ -585,11 +640,8 @@ function drawStartLights(ctx) {
   ctx.restore();
 }
 
-/** Draw a single car at position t on the track. */
-function drawCar(ctx, a, t) {
-  const [x, y] = ptAtT(t, _samples, _arcTbl);
-  const angle  = angleAtT(t, _samples, _arcTbl);
-
+/** Draw a car body + labels at arbitrary canvas coordinates. */
+function drawCarAt(ctx, a, x, y, angle) {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(angle);
@@ -653,6 +705,13 @@ function drawCar(ctx, a, t) {
   }
 }
 
+/** Draw a single car at track position t. */
+function drawCar(ctx, a, t) {
+  const [x, y] = ptAtT(t, _samples, _arcTbl);
+  const angle  = angleAtT(t, _samples, _arcTbl);
+  drawCarAt(ctx, a, x, y, angle);
+}
+
 /* draws DNF tombstone at a fixed location near pit-lane */
 function drawDNF(ctx, a, idx) {
   const x = 300 + idx * 90, y = 475;
@@ -663,16 +722,41 @@ function drawDNF(ctx, a, idx) {
   ctx.fillText('✕ ' + (a.id||'').toUpperCase() + ' DNF', x, y);
 }
 
-/* draws the pit-stop label near S/F for a car in pit */
-function drawPit(ctx, a, idx) {
-  const sfPt = ptAtT(0.005 + idx * 0.013, _samples, _arcTbl);
-  /* pit lane strip (inner side of S/F straight) */
-  drawCar(ctx, a, 0.005 + idx * 0.013);
-  ctx.fillStyle    = '#aaa';
+/**
+ * Compute [x, y, angle] for a car animating through the pit lane.
+ * Five phases: descend from S/F → drive right to garage → hold → drive left back → exit.
+ */
+function pitPosition(a) {
+  function _l(a_, b_, t_) { return a_ + (b_ - a_) * t_; }
+  const p = Math.max(0, Math.min(1,
+    (Date.now() - a.active.startAt) / a.active.durationMs));
+  const TRK_Y = 440;
+  if (p < 0.10) {                         // Phase 1: S/F → pit lane left end
+    const t = p / 0.10;
+    return [_l(PIT_X0 - 4, PIT_X0, t), _l(TRK_Y, PIT_Y, t), -Math.PI * 0.12];
+  } else if (p < 0.45) {                  // Phase 2: drive right to garage
+    const t = (p - 0.10) / 0.35;
+    return [_l(PIT_X0, PIT_MID, t), PIT_Y, 0];
+  } else if (p < 0.65) {                  // Phase 3: hold at garage
+    return [PIT_MID, PIT_Y, 0];
+  } else if (p < 0.90) {                  // Phase 4: drive left back to exit
+    const t = (p - 0.65) / 0.25;
+    return [_l(PIT_MID, PIT_X0, t), PIT_Y, Math.PI];
+  } else {                                // Phase 5: exit back to track
+    const t = (p - 0.90) / 0.10;
+    return [_l(PIT_X0, PIT_X0 - 4, t), _l(PIT_Y, TRK_Y, t), Math.PI * (1 + 0.12 * t)];
+  }
+}
+
+/** Draw a car currently undergoing a pit stop, animated along the pit lane. */
+function drawPit(ctx, a) {
+  const [x, y, angle] = pitPosition(a);
+  drawCarAt(ctx, a, x, y, angle);
+  ctx.fillStyle    = '#ffcc00';
   ctx.font         = 'bold 7px monospace';
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'bottom';
-  ctx.fillText('🔧 PIT', sfPt[0], sfPt[1] - 17);
+  ctx.fillText('🔧', x, y - 9);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -692,13 +776,13 @@ function renderFrame() {
   if (raceSnapshot?.safety_car) drawSafetyCar(_ctx);
   drawStartLights(_ctx);   // start-light sequence (no-op once race is running)
 
-  let dnfIdx = 0, pitIdx = 0;
+  let dnfIdx = 0;
   for (const a of Object.values(carAnim)) {
     advanceCar(a);          // tick the event queue forward
     if (_isDNF(a)) {
       drawDNF(_ctx, a, dnfIdx++);
     } else if (_isInPit(a)) {
-      drawPit(_ctx, a, pitIdx++);
+      drawPit(_ctx, a);     // animated along pit lane
     } else {
       drawCar(_ctx, a, currentT(a));
     }
@@ -711,6 +795,13 @@ function renderFrame() {
   _ctx.textBaseline = 'bottom';
   _ctx.fillText('DALI F1 Circuit — Monza', 6, CANVAS_H - 3);
 
+  // When the race was over but the animation was still running, refresh the
+  // sidebar the exact frame the queue drains (don't wait for the next 2 s poll).
+  if (_raceOverGatePending && circuitQueueDrained()) {
+    _raceOverGatePending = false;
+    if (raceSnapshot) updateSidebar(raceSnapshot);
+  }
+
   _animId = requestAnimationFrame(renderFrame);
 }
 
@@ -719,12 +810,17 @@ function renderFrame() {
    ═══════════════════════════════════════════════════════════════════ */
 
 function updateSidebar(data) {
+  // Gate end-of-race UI on the animation queue draining so that "Race
+  // finished" and final-results events never appear while cars are still
+  // animating the last lap.  (The leaderboard modal uses the same gate.)
+  const animOver = circuitQueueDrained();
+
   /* Status */
   const statusEl = document.getElementById('csb-status');
   if (statusEl) {
     let txt = 'Waiting for race…';
-    if (data.race_over)    txt = '🏁 Race finished';
-    else if (data.safety_car) txt = '🚗 Safety Car deployed';
+    if (data.race_over && animOver) txt = '🏁 Race finished';
+    else if (data.safety_car)       txt = '🚗 Safety Car deployed';
     else if (data.race_started) {
       const lap  = data.current_lap  || '?';
       const tot  = data.total_laps   || '?';
@@ -755,18 +851,25 @@ function updateSidebar(data) {
     }).join('');
   }
 
-  /* Events */
+  // Show all events immediately; only hold back end-of-race headlines until
+  // the animation queue drains (same animOver gate as the leaderboard modal).
+  const _END_RACE_RE = [/FINAL RESULTS/i, /CHEQUERED FLAG/i, /winner/i];
+  const visibleEvents = (data.recent_events || []).filter(e => {
+    const text = (e && e.text != null) ? e.text : String(e);
+    return animOver || !_END_RACE_RE.some(r => r.test(text));
+  });
+
   const evEl = document.getElementById('csb-events');
   if (evEl && data.recent_events) {
-    evEl.innerHTML = (data.recent_events || [])
-      .slice(-6)
+    evEl.innerHTML = visibleEvents
       .map(e => {
+        const text = (e && e.text != null) ? e.text : e;  // {text,lap} or plain string
         let cls = 'ev-normal';
-        if (/safety car/i.test(e))   cls = 'ev-sc';
-        if (/DNF|failure/i.test(e))  cls = 'ev-dnf';
-        if (/green flag|CHEQUERED/i.test(e)) cls = 'ev-green';
-        if (/RESULTS|winner/i.test(e)) cls = 'ev-gold';
-        return `<div class="csb-event ${cls}">${e}</div>`;
+        if (/safety car/i.test(text))           cls = 'ev-sc';
+        if (/DNF|failure/i.test(text))          cls = 'ev-dnf';
+        if (/green flag|CHEQUERED/i.test(text)) cls = 'ev-green';
+        if (/RESULTS|winner/i.test(text))       cls = 'ev-gold';
+        return `<div class="csb-event ${cls}">${text}</div>`;
       })
       .join('');
     evEl.scrollTop = evEl.scrollHeight;

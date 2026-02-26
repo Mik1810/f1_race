@@ -3,17 +3,11 @@
 :- dynamic ferrari_dnf/0.
 :- dynamic mclaren_time/1.
 :- dynamic mclaren_dnf/0.
-:- dynamic redbull_time/1.
-:- dynamic redbull_dnf/0.
-:- dynamic mercedes_time/1.
-:- dynamic mercedes_dnf/0.
 :- dynamic lap/1.
 :- dynamic race_over/0.
 :- dynamic track_event_this_lap/0.
 :- assert(ferrari_time(0)).
 :- assert(mclaren_time(0)).
-:- assert(redbull_time(0)).
-:- assert(mercedes_time(0)).
 :- assert(lap(0)).
 
 add_time(ferrari, D) :-
@@ -32,22 +26,6 @@ add_time(mclaren, D) :-
 effective_time(mclaren, T) :- mclaren_dnf, !, T = 9999.
 effective_time(mclaren, T) :- mclaren_time(T).
 
-add_time(redbull, D) :-
-    retract(redbull_time(S)),
-    S1 is S + D,
-    assert(redbull_time(S1)).
-
-effective_time(redbull, T) :- redbull_dnf, !, T = 9999.
-effective_time(redbull, T) :- redbull_time(T).
-
-add_time(mercedes, D) :-
-    retract(mercedes_time(S)),
-    S1 is S + D,
-    assert(mercedes_time(S1)).
-
-effective_time(mercedes, T) :- mercedes_dnf, !, T = 9999.
-effective_time(mercedes, T) :- mercedes_time(T).
-
 random_track_event :-
     if(track_event_this_lap, true,
         (random(0, 10, R),
@@ -56,25 +34,17 @@ random_track_event :-
               write('[Race Director] SAFETY CAR deployed. +10s to all.'), nl,
               add_time(ferrari, 10),
               add_time(mclaren, 10),
-              add_time(redbull, 10),
-              add_time(mercedes, 10),
               send_m(safety_car, send_message(deploy, pitwall)),
               send_m(ferrari, send_message(safety_car_deployed, pitwall)),
-              send_m(mclaren, send_message(safety_car_deployed, pitwall)),
-              send_m(redbull, send_message(safety_car_deployed, pitwall)),
-              send_m(mercedes, send_message(safety_car_deployed, pitwall))
+              send_m(mclaren, send_message(safety_car_deployed, pitwall))
              ),
          if(R < 4,
              (assert(track_event_this_lap),
               write('[Race Director] HEAVY RAIN. +5s to all.'), nl,
               add_time(ferrari, 5),
               add_time(mclaren, 5),
-              add_time(redbull, 5),
-              add_time(mercedes, 5),
               send_m(ferrari, send_message(rain_warning, pitwall)),
-              send_m(mclaren, send_message(rain_warning, pitwall)),
-              send_m(redbull, send_message(rain_warning, pitwall)),
-              send_m(mercedes, send_message(rain_warning, pitwall))
+              send_m(mclaren, send_message(rain_warning, pitwall))
              ),
              true)))).
 
@@ -106,16 +76,12 @@ declare_winner :-
          write('[PitWall] === CHEQUERED FLAG ==='), nl,
          announce_winner,
          send_m(ferrari, send_message(race_end, pitwall)),
-         send_m(mclaren, send_message(race_end, pitwall)),
-         send_m(redbull, send_message(race_end, pitwall)),
-         send_m(mercedes, send_message(race_end, pitwall)))).
+         send_m(mclaren, send_message(race_end, pitwall)))).
 
 sc_recalledE:>
     write('[Race Director] GREEN FLAG! Track is clear.'), nl,
     send_m(ferrari, send_message(green_flag, pitwall)),
-    send_m(mclaren, send_message(green_flag, pitwall)),
-    send_m(redbull, send_message(green_flag, pitwall)),
-    send_m(mercedes, send_message(green_flag, pitwall)).
+    send_m(mclaren, send_message(green_flag, pitwall)).
 
 lap_done_ferrariE:>
     if(race_over, true,
@@ -130,22 +96,6 @@ lap_done_mclarenE:>
         (random(60, 91, T),
          add_time(mclaren, T),
          write('[PitWall] McLaren lap: '), write(T), write('s'), nl,
-         random_track_event,
-         messageA(redbull, send_message(lap_go_redbull, pitwall)))).
-
-lap_done_redbullE:>
-    if(race_over, true,
-        (random(60, 91, T),
-         add_time(redbull, T),
-         write('[PitWall] Red Bull lap: '), write(T), write('s'), nl,
-         random_track_event,
-         messageA(mercedes, send_message(lap_go_mercedes, pitwall)))).
-
-lap_done_mercedesE:>
-    if(race_over, true,
-        (random(60, 91, T),
-         add_time(mercedes, T),
-         write('[PitWall] Mercedes lap: '), write(T), write('s'), nl,
          (track_event_this_lap -> (retract(track_event_this_lap), send_m(safety_car, send_message(recall, pitwall))) ; true),
          retract(lap(N)), N1 is N + 1, assert(lap(N1)),
          write('[PitWall] Lap '), write(N1), write(' / 5'), nl,
@@ -173,7 +123,9 @@ pit_done_mclarenE:>
     if(race_over, true,
         (add_time(mclaren, 25),
          write('[PitWall] McLaren pit stop +25s.'), nl,
-         messageA(redbull, send_message(lap_go_redbull, pitwall)))).
+         retract(lap(N)), N1 is N + 1, assert(lap(N1)),
+         if(N1 =:= 5, declare_winner,
+             messageA(ferrari, send_message(lap_go_ferrari, pitwall))))).
 
 mclaren_engine_failureE:>
     assert(mclaren_dnf),
@@ -183,35 +135,3 @@ mclaren_engine_failureE:>
 
 mclaren_push_lapE:>
     if(race_over, true, (add_time(mclaren, -3), write('[PitWall] McLaren fastest lap! -3s'), nl)).
-
-pit_done_redbullE:>
-    if(race_over, true,
-        (add_time(redbull, 25),
-         write('[PitWall] Red Bull pit stop +25s.'), nl,
-         messageA(mercedes, send_message(lap_go_mercedes, pitwall)))).
-
-redbull_engine_failureE:>
-    assert(redbull_dnf),
-    write('[PitWall] Red Bull DNF. Verstappen is out.'), nl,
-    send_m(redbull, send_message(retire_redbull, pitwall)),
-    declare_winner.
-
-redbull_push_lapE:>
-    if(race_over, true, (add_time(redbull, -3), write('[PitWall] Red Bull fastest lap! -3s'), nl)).
-
-pit_done_mercedesE:>
-    if(race_over, true,
-        (add_time(mercedes, 25),
-         write('[PitWall] Mercedes pit stop +25s.'), nl,
-         retract(lap(N)), N1 is N + 1, assert(lap(N1)),
-         if(N1 =:= 5, declare_winner,
-             messageA(ferrari, send_message(lap_go_ferrari, pitwall))))).
-
-mercedes_engine_failureE:>
-    assert(mercedes_dnf),
-    write('[PitWall] Mercedes DNF. Hamilton is out.'), nl,
-    send_m(mercedes, send_message(retire_mercedes, pitwall)),
-    declare_winner.
-
-mercedes_push_lapE:>
-    if(race_over, true, (add_time(mercedes, -3), write('[PitWall] Mercedes fastest lap! -3s'), nl)).

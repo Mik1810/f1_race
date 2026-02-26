@@ -9,13 +9,34 @@ Usage:  bash ui/run.sh
 
 import json
 import re
-import socket
+import signal
 import subprocess
 import argparse
+import atexit
 import os
+import sys
 import time
 import threading
 from flask import Flask, jsonify, request, send_from_directory
+
+# ── Restart logger ────────────────────────────────────────────────────────────
+_RLOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                          "..", "log", "restart.log")
+_RLOG_FILE = os.path.normpath(_RLOG_FILE)
+os.makedirs(os.path.dirname(_RLOG_FILE), exist_ok=True)
+_rlog_t0: float = 0.0
+
+def _rlog(msg: str) -> None:
+    """Write a timestamped line to both stdout and log/restart.log."""
+    elapsed_ms = int((time.time() - _rlog_t0) * 1000) if _rlog_t0 else 0
+    line = f"[PY  ][{elapsed_ms:6d} ms] {msg}"
+    print(line, flush=True)
+    try:
+        with open(_RLOG_FILE, "a", encoding="utf-8") as _f:
+            _f.write(line + "\n")
+    except Exception:
+        pass
+# ─────────────────────────────────────────────────────────────────────────────
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
@@ -313,20 +334,38 @@ def api_race_state():
             "border":         car_meta.get("border", "#888888"),
         }
 
-    # Recent notable events (last 8 interesting lines from pitwall pane)
+    # Parse events with their lap context so the frontend can reveal each
+    # event only after the corresponding lap animation has completed.
+    #
+    # Algorithm (forward scan):
+    #   - "[PitWall] Lap N / M" marks N laps as officially complete.
+    #     After seeing it, the in-progress lap becomes N+1, so any event
+    #     that follows must wait for lap N+1 to animate → reveal_lap = N+1.
+    #   - Events appearing before the first lap marker belong to lap 1.
+    #   - Events after the last lap marker (FINAL RESULTS, CHEQUERED FLAG…)
+    #     get reveal_lap = total_laps + 1 so the circuitQueueDrained() gate
+    #     in the frontend (animOver) reveals them once every lap is done.
     _EVENT_KEYWORDS = [
         "SAFETY CAR", "GREEN FLAG", "LIGHTS OUT", "FINAL RESULTS",
-        "CHEQUERED FLAG", "DNF", "pit stop", "lap:", "Lap ", "RAIN",
-        "engine failure", "FASTEST LAP", "push lap", "STANDINGS",
+        "CHEQUERED FLAG", "DNF", "pit stop",
+        "RAIN", "engine failure", "fastest lap",
     ]
-    events: list = []
-    for line in reversed(lines):
+    _LAP_CTR_RE = re.compile(r'\[PitWall\] Lap (\d+) / \d+')
+    current_lap_ctx: int = 1   # events here are revealed when this many laps animated
+    events_with_lap: list = []
+    for line in lines:
         stripped = line.strip()
-        if stripped and any(kw.lower() in stripped.lower() for kw in _EVENT_KEYWORDS):
-            events.append(stripped)
-        if len(events) >= 8:
-            break
-    state["recent_events"] = list(reversed(events))
+        if not stripped:
+            continue
+        lap_m = _LAP_CTR_RE.match(stripped)
+        if lap_m:
+            # Advance context: laps done = N  →  in-progress lap = N+1
+            current_lap_ctx = int(lap_m.group(1)) + 1
+            continue   # lap-counter lines are bookmarks, not events
+        if any(kw.lower() in stripped.lower() for kw in _EVENT_KEYWORDS):
+            events_with_lap.append({"text": stripped, "lap": current_lap_ctx})
+    # Keep last 20 chronologically
+    state["recent_events"] = events_with_lap[-20:]
 
     return jsonify(state)
 
@@ -343,53 +382,64 @@ def api_send():
 @app.route("/api/restart", methods=["POST"])
 def api_restart():
     """Kill current MAS and relaunch via startmas.sh.
-    A background watcher thread monitors the server pane for ADDRINUSE and
-    automatically retries the full restart cycle if needed.
+    Always allowed — if a restart is already running it is superseded.
     """
     f1_race_dir = os.path.normpath(
         os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
     )
-    _do_restart(f1_race_dir, max_attempts=5)
+    t = threading.Thread(
+        target=_do_restart,
+        args=(f1_race_dir,),
+        daemon=True,
+    )
+    t.start()
     return jsonify({"ok": True})
 
 
-def _wait_port_free(port: int = 3010, timeout: float = 25.0) -> bool:
-    """Block until the TCP port can be bound (returns True) or timeout expires.
-
-    Uses bind() — not connect() — because SICStus calls bind() to claim the
-    port.  A socket in TIME_WAIT or CLOSE_WAIT will refuse connect() (no one
-    listening) but still prevent bind(), causing ADDRINUSE.  By attempting
-    bind() ourselves (without SO_REUSEADDR) we test the exact same condition
-    SICStus will face.
-    """
-    deadline = time.time() + timeout
-    while time.time() < deadline:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            try:
-                # SO_REUSEADDR intentionally NOT set — mirror what SICStus does.
-                s.bind(("", port))
-                return True   # bind succeeded: port is truly free
-            except OSError:
-                time.sleep(0.5)
-    print(f"[restart] WARNING: port {port} still occupied after {timeout:.0f}s — proceeding anyway.",
-          flush=True)
-    return False
-
-
 def _kill_all():
-    """Best-effort kill of every MAS-related process."""
-    for cmd in [
+    """Best-effort kill of every MAS-related process, with death confirmation."""
+    _rlog("_kill_all start")
+    # Phase 1: send SIGKILL to all MAS-related processes IN PARALLEL.
+    cmds = [
         ["pkill", "-9", "-f", "startmas.sh"],
         ["tmux", "kill-session", "-t", SESSION],
         ["pkill", "-9", "-f", "active_server_wi.pl"],
         ["pkill", "-9", "-f", "active_dali_wi.pl"],
         ["pkill", "-9", "-f", "active_user_wi.pl"],
-    ]:
+    ]
+
+    def _run(cmd):
         try:
-            subprocess.run(cmd, timeout=5)
+            subprocess.run(cmd, timeout=5, capture_output=True)
         except Exception:
             pass
-    time.sleep(1)
+
+    threads = [threading.Thread(target=_run, args=(c,), daemon=True) for c in cmds]
+    for th in threads:
+        th.start()
+    for th in threads:
+        th.join(timeout=5)
+    _rlog("  parallel pkill/tmux done")
+
+    # Phase 2: wait until pgrep confirms every SICStus process is gone.
+    _PATTERNS = ["active_server_wi.pl", "active_dali_wi.pl", "active_user_wi.pl"]
+    for attempt in range(10):   # up to 1 s
+        still_alive = False
+        for pat in _PATTERNS:
+            r = subprocess.run(["pgrep", "-f", pat], capture_output=True)
+            if r.returncode == 0:
+                still_alive = True
+                break
+        if not still_alive:
+            _rlog(f"  pgrep confirmed dead (attempt {attempt+1})")
+            break
+        time.sleep(0.1)
+    else:
+        _rlog("  WARNING: some SICStus processes did not die in 1 s")
+        print("[kill_all] WARNING: some SICStus processes did not die in 1 s", flush=True)
+
+    time.sleep(0.2)   # brief pause for kernel socket cleanup
+    _rlog("_kill_all done")
 
 
 def _in_docker() -> bool:
@@ -398,28 +448,20 @@ def _in_docker() -> bool:
 
 
 def _launch(f1_race_dir: str):
-    """Launch or signal startmas.sh depending on the runtime environment.
-
-    • Docker (ui container): cannot run startmas.sh directly because SICStus
-      Prolog is only available in the mas container.  Write a trigger file to
-      the shared tmux-socket volume (/tmp/tmux-shared/.restart); the mas
-      container's entrypoint (docker/mas/entrypoint.sh) polls for it and
-      re-runs startmas.sh inside the correct container.
-
-    • WSL / bare Linux: Flask and startmas.sh share the same environment, so
-      spawn startmas.sh as a detached subprocess exactly as before.
-    """
+    """Launch or signal startmas.sh depending on the runtime environment."""
+    _rlog("_launch start")
     if _in_docker():
         trigger = "/tmp/tmux-shared/.restart"
         try:
             os.makedirs(os.path.dirname(trigger), exist_ok=True)
             with open(trigger, "w") as fh:
                 fh.write("1\n")
+            _rlog(f"  Docker trigger written to {trigger}")
             print(f"[restart] Trigger written to {trigger}", flush=True)
         except Exception as exc:
+            _rlog(f"  WARNING: could not write restart trigger: {exc}")
             print(f"[restart] WARNING: could not write restart trigger: {exc}", flush=True)
     else:
-        # WSL / native Linux: run startmas.sh in the same environment as Flask.
         subprocess.Popen(
             ["bash", "startmas.sh"],
             cwd=f1_race_dir,
@@ -428,40 +470,35 @@ def _launch(f1_race_dir: str):
             stderr=subprocess.DEVNULL,
             start_new_session=True,
         )
+        _rlog("  startmas.sh launched as detached process")
         print("[restart] startmas.sh launched as detached process.", flush=True)
 
 
-def _do_restart(f1_race_dir: str, max_attempts: int = 5):
-    """Kill, launch, then start the watcher thread."""
-    _kill_all()
-    # Wait until the LINDA port is confirmed free before launching the new MAS.
-    # Without this, startmas.sh finds port 3010 still in TIME_WAIT / CLOSE_WAIT
-    # (SICStus sockets linger a few seconds after SIGKILL) and either fails with
-    # ADDRINUSE or stalls for 30 s on its own port-wait loop — which is why a
-    # second manual click was needed to make it work.
-    _wait_port_free(3010)
-    _launch(f1_race_dir)
-    t = threading.Thread(
-        target=_watch_for_addrinuse,
-        args=(f1_race_dir, max_attempts),
-        daemon=True,
+def _do_restart(f1_race_dir: str):
+    """Kill the MAS and relaunch via startmas.sh.
+
+    Port-free waiting and ADDRINUSE retries are handled entirely by
+    startmas.sh — Python's job is just to kill and hand off.
+    """
+    import datetime
+    global _rlog_t0
+    _rlog_t0 = time.time()
+    th = threading.current_thread()
+    header = (
+        f"\n=== restart at {datetime.datetime.now().isoformat()} "
+        f"thread={th.name} tid={th.ident} ===\n"
     )
-    t.start()
+    try:
+        with open(_RLOG_FILE, "a", encoding="utf-8") as _f:
+            _f.write(header)
+    except Exception:
+        pass
+    _rlog(f"_do_restart START thread={th.name} tid={th.ident}")
+    _kill_all()
+    _launch(f1_race_dir)
+    _rlog("_do_restart DONE — startmas.sh running, bash owns the port-wait")
 
 
-def _watch_for_addrinuse(f1_race_dir: str, attempts_left: int):
-    """Watch the server pane; if ADDRINUSE appears, restart automatically."""
-    # Wait long enough for SICStus to either succeed or print the error.
-    # The server usually starts in 3-8 s; 12 s gives ample margin.
-    time.sleep(12)
-    pane = capture_pane("server")
-    if "ADDRINUSE" in pane:
-        print(f"[auto-retry] ADDRINUSE detected in server pane "
-              f"(attempts left: {attempts_left})", flush=True)
-        if attempts_left > 0:
-            _do_restart(f1_race_dir, max_attempts=attempts_left - 1)
-        else:
-            print("[auto-retry] max attempts reached, giving up.", flush=True)
 
 
 if __name__ == "__main__":
@@ -470,6 +507,23 @@ if __name__ == "__main__":
     parser.add_argument("--session", default="f1_race",       help="tmux session name")
     args = parser.parse_args()
     SESSION = args.session
+
+    # ── Shutdown handler: kill SICStus + tmux when the UI is stopped ──────────
+    # Covers three cases:
+    #   1. CTRL+C        → Python raises KeyboardInterrupt → atexit fires
+    #   2. kill <pid>    → SIGTERM  → _shutdown() called  → atexit fires
+    #   3. Normal exit() → atexit fires
+    def _shutdown(signum=None, frame=None):
+        print("\n[ui] Shutting down — stopping MAS...", flush=True)
+        _kill_all()
+        print("[ui] MAS stopped.", flush=True)
+        sys.exit(0)
+
+    atexit.register(_kill_all)                         # CTRL+C / normal exit
+    signal.signal(signal.SIGTERM, _shutdown)           # kill <pid>
+    # SIGINT is already converted to KeyboardInterrupt by Python;
+    # Flask re-raises it after cleanup, which triggers atexit.
+
     print(f"\n  \U0001f3ce  F1 Race DALI Dashboard")
     print(f"  \u25ba  Open in browser: http://localhost:{args.port}\n")
     app.run(host="0.0.0.0", port=args.port, debug=False)

@@ -19,24 +19,6 @@
       "label": "McLaren MCL38",
       "color": "#180c00",
       "border": "#ff8700"
-    },
-    {
-      "id": "redbull",
-      "team": "Red Bull",
-      "car_model": "RB20",
-      "driver": "Verstappen",
-      "label": "Red Bull RB20",
-      "color": "#060d1c",
-      "border": "#1e41ff"
-    },
-    {
-      "id": "mercedes",
-      "team": "Mercedes",
-      "car_model": "W15",
-      "driver": "Hamilton",
-      "label": "Mercedes W15",
-      "color": "#001a14",
-      "border": "#00d2be"
     }
   ]
 }
