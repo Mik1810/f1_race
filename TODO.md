@@ -19,3 +19,4 @@
 - [x] Fixare bug "External  precondition ... noDeltatime" (partially solved)
 - [ ] Non sempre lo startmas fa partire correttamente il programma
 - [x] La UI ci mette eccessivamente ad aprirsi, probabiomente perchè prova a riscaricare le librerie o a ricreare ogni volta il venv
+- [ ] controllare se il restart nella circuit tab si blocca

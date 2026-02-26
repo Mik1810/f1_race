@@ -197,8 +197,15 @@ function _blankAnim(id) {
  * Sets the animation barrier once every car has at least one lap enqueued,
  * or after a 30-second fallback timeout (guards against agents that never
  * report laps so that cars which DO have data still animate).
- * Assigns chainBase = _animationBarrier to ALL cars at the same moment so
- * they share an identical time origin and start from the S/F line together.
+ * Assigns chainBase to ALL cars simultaneously so they share an identical
+ * time origin and start from the S/F line together.
+ *
+ * chainBase = max(now, raceStartedAt + LIGHTS_OUT_DELAY)
+ *   • Barrier fires early (all cars ready before lights-out): chainBase is in
+ *     the future → cars wait at the line until the lights go out. ✓
+ *   • Barrier fires late (some agent slow to report first lap): chainBase is
+ *     Date.now() → cars start immediately from t=0, no stale past-anchor that
+ *     would cause laps to expire instantly or start mid-way through. ✓
  */
 function _trySetBarrier() {
   if (_animationBarrier !== null) return;  // already fired
@@ -206,11 +213,11 @@ function _trySetBarrier() {
   const cars = Object.values(carAnim);
   if (!cars.length) return;
   const allReady = cars.every(a => a.enqueuedLaps > 0);
-  // Fallback: if 30 s after race start some cars still have 0 laps (agent
-  // missing or not yet generated), fire the barrier anyway so the others move.
+  // Fallback: if 30 s after race start some cars still have 0 laps,
+  // fire the barrier anyway so cars with data still animate.
   const timedOut = Date.now() - _raceStartedAt > 30_000;
   if (!allReady && !timedOut) return;
-  _animationBarrier = _raceStartedAt + LIGHTS_OUT_DELAY;
+  _animationBarrier = Math.max(Date.now(), _raceStartedAt + LIGHTS_OUT_DELAY);
   for (const a of cars) a.chainBase = _animationBarrier;
 }
 
@@ -235,12 +242,36 @@ function updateCarAnim(data) {
   const raceOver    = !!data.race_over;
   const raceStarted = !!data.race_started;
 
-  // MAS restart: race_over flips back to false → new race, reset everything.
+  // ── Detect a genuine new race ──────────────────────────────────────────
+  // We ONLY reset on race_over → false (clean end-of-race cycle) OR when
+  // laps_completed goes backwards for any car (MAS hard-restart mid-race).
+  //
+  // We deliberately do NOT reset on race_started → false because:
+  //   • capture_pane occasionally returns empty / stale text mid-race
+  //   • that causes race_started to momentarily flip false
+  //   • resetting here would wipe all animation state mid-race (cars freeze)
+  //
   if (_prevRaceOver && !raceOver) {
+    // Normal cycle: race finished → new race starting.
     for (const key of Object.keys(carAnim)) delete carAnim[key];
     _prevRaceStarted  = false;
     _raceStartedAt    = 0;
     _animationBarrier = null;
+  } else {
+    // Mid-race MAS restart: detect by laps_completed decreasing below what
+    // we already enqueued for any car.  This is the only reliable signal that
+    // a genuinely new race is running (simple race_started flip is too noisy).
+    for (const [id, car] of Object.entries(data.cars || {})) {
+      const a = carAnim[id];
+      if (a && car.laps_completed < a.enqueuedLaps) {
+        // This car has fewer laps than we already animated → new race.
+        for (const key of Object.keys(carAnim)) delete carAnim[key];
+        _prevRaceStarted  = false;
+        _raceStartedAt    = 0;
+        _animationBarrier = null;
+        break;
+      }
+    }
   }
   _prevRaceOver = raceOver;
 
@@ -251,7 +282,12 @@ function updateCarAnim(data) {
   }
 
   for (const [id, car] of Object.entries(data.cars || {})) {
-    if (!carAnim[id]) carAnim[id] = _blankAnim(id);
+    if (!carAnim[id]) {
+      carAnim[id] = _blankAnim(id);
+      // If the barrier already fired before this car appeared (e.g. late poll),
+      // assign chainBase immediately so it can animate without waiting forever.
+      if (_animationBarrier !== null) carAnim[id].chainBase = _animationBarrier;
+    }
     const a = carAnim[id];
     if (raceOver) a.raceOver = true;
 
