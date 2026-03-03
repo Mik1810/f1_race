@@ -48,7 +48,8 @@ engine_failure_ferrari :-
 engine_failure_ferrariI:>
     assert(engine_failure_ferrari_fired),
     write('[Ferrari] *** ENGINE FAILURE -- Power loss! Leclerc slowing! ***'),
-    send_m(pitwall, send_message(ferrari_engine_failure, ferrari)).
+    send_m(pitwall, send_message(ferrari_engine_failure, ferrari)),
+    send_m(pitwall, inform(telemetry(ferrari, engine_failure, critical), ferrari)).
 
 push_lap_ferrari :-
     race_started,
@@ -60,4 +61,5 @@ push_lap_ferrari :-
 push_lap_ferrariI:>
     assert(push_lap_ferrari_fired),
     write('[Ferrari] PUSH LAP! Leclerc going flat out -- setting fastest sectors!'),
-    send_m(pitwall, send_message(ferrari_push_lap, ferrari)).
+    send_m(pitwall, send_message(ferrari_push_lap, ferrari)),
+    send_m(pitwall, inform(telemetry(ferrari, push_lap, active), ferrari)).

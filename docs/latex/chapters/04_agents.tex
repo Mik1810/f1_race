@@ -216,7 +216,8 @@ engine_failure_ferrari :-
 engine_failure_ferrariI:>
     assert(engine_failure_ferrari_fired),
     write('[Ferrari] *** ENGINE FAILURE -- Power loss! Leclerc slowing! ***'),
-    send_m(pitwall, send_message(ferrari_engine_failure, ferrari)).
+    send_m(pitwall, send_message(ferrari_engine_failure, ferrari)),
+    send_m(pitwall, inform(telemetry(ferrari, engine_failure, critical), ferrari)).
 \end{lstlisting}
 \end{minipage}
 
@@ -234,7 +235,10 @@ The condition requires four conjuncts to hold simultaneously:
 On firing, \texttt{engine\_failure\_ferrari\_fired} is asserted first to
 prevent re-entry, then \texttt{send\_m} notifies the pit wall. Note the use of
 \texttt{send\_m} (safe inside non-top-level code) rather than
-\texttt{messageA} (top-level only). The pit wall reacts via
+\texttt{messageA} (top-level only). A second \texttt{send\_m} delivers a FIPA
+\texttt{inform} with a \texttt{telemetry/3} payload
+(\texttt{telemetry(ferrari, engine\_failure, critical)}) at priority~100,
+logged by the pit wall as a diagnostic trace. The pit wall reacts via
 \texttt{ferrari\_engine\_failureE}, sets the effective time to 9999\,s, and
 eventually broadcasts \texttt{race\_end}. \\
 
@@ -251,7 +255,8 @@ push_lap_ferrari :-
 push_lap_ferrariI:>
     assert(push_lap_ferrari_fired),
     write('[Ferrari] PUSH LAP! Leclerc going flat out -- setting fastest sectors!'),
-    send_m(pitwall, send_message(ferrari_push_lap, ferrari)).
+    send_m(pitwall, send_message(ferrari_push_lap, ferrari)),
+    send_m(pitwall, inform(telemetry(ferrari, push_lap, active), ferrari)).
 \end{lstlisting}
 \end{minipage}
 
@@ -259,8 +264,11 @@ Structurally identical to the engine-failure event but with a $10\,\%$
 probability. The \\ \texttt{push\_lap\_ferrari\_fired} flag is retracted at the
 start of every lap by \texttt{lap\_go\_ferrariE} (and \texttt{start\_raceE}),
 so the event fires \emph{at most once per lap} rather than at most once per
-race. The pit wall handler subtracts $3\,\text{s}$ from Ferrari's accumulated
-time upon receiving \texttt{ferrari\_push\_lap}.
+race. A FIPA \texttt{inform} with payload
+\texttt{telemetry(ferrari, push\_lap, active)} is also sent at priority~100
+for diagnostic tracing at the pit wall. The pit wall handler subtracts
+$3\,\text{s}$ from Ferrari's accumulated time upon receiving
+\texttt{ferrari\_push\_lap}.
 
 \textbf{Knowledge Base and Event Summary}
 
@@ -315,10 +323,12 @@ Race-over broadcast; asserts \texttt{race\_over} \\
 \multicolumn{2}{@{}l}{\textit{Internal events}} \\[4pt]
 
 \texttt{engine\_failure\_ferrariI} &
-$\approx 0.2\,\%$/cycle; fires once per race; notifies pit wall of DNF \\
+$\approx 0.2\,\%$/cycle; fires once per race; notifies pit wall of DNF;
+sends \texttt{inform(telemetry(ferrari, engine\_failure, critical))} \\
 
 \texttt{push\_lap\_ferrariI} &
-$\approx 10\,\%$/cycle; fires once per lap; deducts $3\,\text{s}$ via pit wall \\
+$\approx 10\,\%$/cycle; fires once per lap; deducts $3\,\text{s}$ via pit wall;
+sends \texttt{inform(telemetry(ferrari, push\_lap, active))} \\
 
 \bottomrule
 \end{longtable}
@@ -393,14 +403,12 @@ random_track_event :-
               write('[Race Director] SAFETY CAR deployed. +10s to all.'), nl,
               add_time(ferrari, 10), add_time(mclaren, 10),
               send_m(safety_car, send_message(deploy, pitwall)),
-              send_m(ferrari,    send_message(safety_car_deployed, pitwall)),
-              send_m(mclaren,    send_message(safety_car_deployed, pitwall))),
+              broadcast_to_list([ferrari, mclaren], safety_car_deployed, pitwall)),
          if(R < 4,
              (assert(track_event_this_lap),
               write('[Race Director] HEAVY RAIN. +5s to all.'), nl,
               add_time(ferrari, 5), add_time(mclaren, 5),
-              send_m(ferrari, send_message(rain_warning, pitwall)),
-              send_m(mclaren, send_message(rain_warning, pitwall))),
+              broadcast_to_list([ferrari, mclaren], rain_warning, pitwall)),
              true)))).
 \end{lstlisting}
 \end{minipage}
@@ -436,7 +444,10 @@ announce_winner :-
 \texttt{declare\_winner/0} is guarded by \texttt{race\_over} to prevent double
 invocation (it can be triggered by either the last \texttt{lap\_done} or an
 engine-failure event). It asserts \texttt{race\_over}, prints the podium via
-\texttt{announce\_winner/0}, and broadcasts \texttt{race\_end} to all cars.
+\texttt{announce\_winner/0}, and broadcasts \texttt{race\_end} to all cars
+using \texttt{broadcast\_to\_list/3} (defined in \texttt{communication.con})
+instead of individual \texttt{send\_m} calls, so the number of cars is never
+hardcoded here.
 \texttt{announce\_winner/0} uses \texttt{findall} to collect all
 \texttt{effective\_time} pairs, sorts them by key (time) with
 \texttt{keysort}, and delegates formatted output to \texttt{print\_podium/2}.\\
@@ -529,8 +540,7 @@ stop replaces the normal lap-done report for the last car in the round.\\
 \begin{lstlisting}[language=Prolog]
 sc_recalledE:>
     write('[Race Director] GREEN FLAG! Track is clear.'), nl,
-    send_m(ferrari, send_message(green_flag, pitwall)),
-    send_m(mclaren, send_message(green_flag, pitwall)).
+    broadcast_to_list([ferrari, mclaren], green_flag, pitwall).
 \end{lstlisting}
 \end{minipage}
 
@@ -607,7 +617,7 @@ push-lap messages after the race has ended. \\
 \texttt{lap\_done\_mclarenE}         & Adds lap time, recalls SC if needed, increments lap, checks race end \\
 \texttt{pit\_done\_ferrariE}         & Adds $+25\,\text{s}$, dispatches to McLaren \\
 \texttt{pit\_done\_mclarenE}         & Adds $+25\,\text{s}$, increments lap, checks race end \\
-\texttt{sc\_recalledE}               & Safety car recalled; broadcasts \texttt{green\_flag} to all cars \\
+\texttt{sc\_recalledE}               & Safety car recalled; broadcasts \texttt{green\_flag} to all cars via \texttt{broadcast\_to\_list} \\
 \texttt{ferrari\_engine\_failureE}   & Asserts DNF, retires car, triggers \texttt{declare\_winner} \\
 \texttt{mclaren\_engine\_failureE}   & Asserts DNF, retires car, triggers \texttt{declare\_winner} \\
 \texttt{ferrari\_push\_lapE}         & Subtracts $3\,\text{s}$ from Ferrari's accumulator \\
@@ -815,3 +825,88 @@ This completes the three-step safety-car chain:
 
 \bottomrule
 \end{longtable}
+
+% ----------------------------------------------------------------
+\subsection{Custom FIPA Primitives (\texttt{communication.con})}
+\label{sec:fipa_primitives}
+
+The file \texttt{conf/communication.con} extends the standard set of DALI
+\texttt{told}/\texttt{tell} rules with two F1-specific FIPA primitives.
+Both are active for every agent in the MAS because \texttt{communication.con}
+is loaded globally at agent startup.
+
+\subsubsection{\texttt{broadcast\_to\_list/3} --- One-to-Many Inform}
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=Prolog]
+broadcast_to_list([], _, _).
+broadcast_to_list([H|T], Content, Sender) :-
+    send_m(H, send_message(Content, Sender)),
+    broadcast_to_list(T, Content, Sender).
+
+told(Ag, inform(broadcast(Targets, Content, Sender)), 70) :-
+    write('[Broadcast] from '), write(Sender), write(' to '), write(Targets), nl,
+    write('[Broadcast] content: '), write(Content), nl,
+    broadcast_to_list(Targets, Content, Sender),
+    !.
+
+tell(To, _, inform(broadcast(_, _, _))) :- true.
+\end{lstlisting}
+\end{minipage}
+
+\noindent
+A recursive helper that sends the same \texttt{send\_message} to every agent
+in \texttt{Targets}. The companion \texttt{told/3} rule at priority~70 (equal
+to the standard \texttt{inform} priority) handles the case where an agent
+\emph{receives} an \texttt{inform(broadcast(\ldots))} message, it logs the
+broadcast and delegates to the helper, cutting after the first successful
+match.
+
+In the generated \texttt{pitWallType.txt}, every multi-car notification is
+expressed with this primitive rather than with repeated individual
+\texttt{send\_m} calls:
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=Prolog]
+broadcast_to_list([ferrari, mclaren], safety_car_deployed, pitwall).
+broadcast_to_list([ferrari, mclaren], rain_warning,        pitwall).
+broadcast_to_list([ferrari, mclaren], green_flag,          pitwall).
+broadcast_to_list([ferrari, mclaren], race_end,            pitwall).
+\end{lstlisting}
+\end{minipage}
+
+\noindent
+Because the list is built from \texttt{agents.json} at generation time, adding
+or removing a car from the roster requires no manual edits to the broadcast
+calls.
+
+\subsubsection{\texttt{inform(telemetry/3)} --- Diagnostic Telemetry}
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=Prolog]
+told(Ag, inform(telemetry(Car, Data, Level)), 100) :-
+    write('[Telemetry] '), write(Car),
+    write(' | '), write(Data),
+    write(' | '), write(Level), nl,
+    !.
+
+tell(To, _, inform(telemetry(_, _, _))) :- true.
+\end{lstlisting}
+\end{minipage}
+
+\noindent
+A high-priority (\texttt{100}) \texttt{told} rule that intercepts any
+\texttt{inform} whose content is a \texttt{telemetry/3} term.  The three
+arguments are:
+\begin{itemize}[leftmargin=2em, itemsep=2pt]
+  \item \texttt{Car}: the originating car identifier (\emph{e.g.}\ \texttt{ferrari}).
+  \item \texttt{Data}: the event type (\texttt{engine\_failure} or \texttt{push\_lap}).
+  \item \texttt{Level}: severity or mode (\texttt{critical} or \texttt{active}).
+\end{itemize}
+
+Car agents send this message alongside the standard \texttt{send\_message} in
+their \texttt{engine\_failure\_\{id\}I} and \texttt{push\_lap\_\{id\}I}
+handlers.  The receiving agent (pit wall) logs the payload via \texttt{write}
+and stores it in its \texttt{past\_event} database via the standard
+\texttt{call\_inform} infrastructure.  No reactive logic is currently
+triggered on receipt; the record can be queried retrospectively.

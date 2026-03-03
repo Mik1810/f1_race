@@ -30,8 +30,9 @@ Each arrow represents a \texttt{send\_m} or \texttt{messageA} call in the DALI s
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{../../imgs/03_safety_car.png}
-  \caption{Safety car chain: pit wall deploys the safety car and notifies all cars;
-           at the end of the lap the safety car is recalled and the green flag is broadcast.}
+  \caption{Safety car chain: pit wall deploys the safety car and notifies all cars
+           via \texttt{broadcast\_to\_list}; at the end of the lap the safety car is
+           recalled and the green flag is broadcast via \texttt{broadcast\_to\_list}.}
   \label{fig:seq_sc}
 \end{figure}
 
@@ -40,7 +41,22 @@ Each arrow represents a \texttt{send\_m} or \texttt{messageA} call in the DALI s
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{../../imgs/04_engine_failure.png}
-  \caption{Engine failure: a car's internal event notifies the pit wall, which sets the
-           DNF time, retires the car, and immediately calls \texttt{declare\_winner}.}
+  \caption{Engine failure: a car's internal event notifies the pit wall via
+           \texttt{send\_message} and a FIPA \texttt{inform(telemetry)} at priority~100;
+           the pit wall sets the DNF time, retires the car, and immediately calls
+           \texttt{declare\_winner}, broadcasting \texttt{race\_end} via
+           \texttt{broadcast\_to\_list}.}
   \label{fig:seq_dnf}
+\end{figure}
+
+\subsection{Push Lap (Internal Event)}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{../../imgs/05_push_lap.png}
+  \caption{Push lap: a car's internal probabilistic event ($\approx10\,\%$/cycle)
+           fires at most once per lap, notifies the pit wall via \texttt{send\_message}
+           and a FIPA \texttt{inform(telemetry)} at priority~100 for diagnostic tracing;
+           the pit wall subtracts $3\,\text{s}$ from the car's accumulator.}
+  \label{fig:seq_pushlap}
 \end{figure}

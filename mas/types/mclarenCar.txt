@@ -48,7 +48,8 @@ engine_failure_mclaren :-
 engine_failure_mclarenI:>
     assert(engine_failure_mclaren_fired),
     write('[McLaren] *** ENGINE FAILURE -- Power loss! Norris slowing! ***'),
-    send_m(pitwall, send_message(mclaren_engine_failure, mclaren)).
+    send_m(pitwall, send_message(mclaren_engine_failure, mclaren)),
+    send_m(pitwall, inform(telemetry(mclaren, engine_failure, critical), mclaren)).
 
 push_lap_mclaren :-
     race_started,
@@ -60,4 +61,5 @@ push_lap_mclaren :-
 push_lap_mclarenI:>
     assert(push_lap_mclaren_fired),
     write('[McLaren] PUSH LAP! Norris going flat out -- setting fastest sectors!'),
-    send_m(pitwall, send_message(mclaren_push_lap, mclaren)).
+    send_m(pitwall, send_message(mclaren_push_lap, mclaren)),
+    send_m(pitwall, inform(telemetry(mclaren, push_lap, active), mclaren)).

@@ -98,7 +98,8 @@ def gen_car_type(car: dict) -> str:
         f"engine_failure_{i}I:>\n"
         f"    assert(engine_failure_{i}_fired),\n"
         f"    write('[{tm}] *** ENGINE FAILURE -- Power loss! {drv} slowing! ***'),\n"
-        f"    send_m(pitwall, send_message({i}_engine_failure, {i})).\n"
+        f"    send_m(pitwall, send_message({i}_engine_failure, {i})),\n"
+        f"    send_m(pitwall, inform(telemetry({i}, engine_failure, critical), {i})).\n"
         "\n"
         f"push_lap_{i} :-\n"
         f"    race_started,\n"
@@ -110,7 +111,8 @@ def gen_car_type(car: dict) -> str:
         f"push_lap_{i}I:>\n"
         f"    assert(push_lap_{i}_fired),\n"
         f"    write('[{tm}] PUSH LAP! {drv} going flat out -- setting fastest sectors!'),\n"
-        f"    send_m(pitwall, send_message({i}_push_lap, {i})).\n"
+        f"    send_m(pitwall, send_message({i}_push_lap, {i})),\n"
+        f"    send_m(pitwall, inform(telemetry({i}, push_lap, active), {i})).\n"
     )
 
 
@@ -167,18 +169,16 @@ def gen_pitwall_type(cars: list, total_laps: int) -> str:
     for i in ids:
         L.append(f"              add_time({i}, 10),")
     L.append("              send_m(safety_car, send_message(deploy, pitwall)),")
-    for idx2, i in enumerate(ids):
-        suffix = "" if idx2 == n - 1 else ","
-        L.append(f"              send_m({i}, send_message(safety_car_deployed, pitwall)){suffix}")
+    ids_list = "[" + ", ".join(ids) + "]"
+    L.append(f"              broadcast_to_list({ids_list}, safety_car_deployed, pitwall)")
     L.append("             ),")
     L.append("         if(R < 4,")
     L.append("             (assert(track_event_this_lap),")
     L.append("              write('[Race Director] HEAVY RAIN. +5s to all.'), nl,")
     for i in ids:
         L.append(f"              add_time({i}, 5),")
-    for idx2, i in enumerate(ids):
-        suffix = "" if idx2 == n - 1 else ","
-        L.append(f"              send_m({i}, send_message(rain_warning, pitwall)){suffix}")
+    ids_list = "[" + ", ".join(ids) + "]"
+    L.append(f"              broadcast_to_list({ids_list}, rain_warning, pitwall)")
     L.append("             ),")
     L.append("             true)))).")
     L.append("")
@@ -218,16 +218,14 @@ def gen_pitwall_type(cars: list, total_laps: int) -> str:
     L.append("        (assert(race_over),")
     L.append("         write('[PitWall] === CHEQUERED FLAG ==='), nl,")
     L.append("         announce_winner,")
-    for idx2, i in enumerate(ids):
-        suffix = "))." if idx2 == n - 1 else ","
-        L.append(f"         send_m({i}, send_message(race_end, pitwall)){suffix}")
+    ids_list = "[" + ", ".join(ids) + "]"
+    L.append(f"         broadcast_to_list({ids_list}, race_end, pitwall))).")
     L.append("")
     # sc_recalled — green flag broadcast to all cars
     L.append("sc_recalledE:>")
     L.append("    write('[Race Director] GREEN FLAG! Track is clear.'), nl,")
-    for idx2, i in enumerate(ids):
-        suffix = "." if idx2 == n - 1 else ","
-        L.append(f"    send_m({i}, send_message(green_flag, pitwall)){suffix}")
+    ids_list = "[" + ", ".join(ids) + "]"
+    L.append(f"    broadcast_to_list({ids_list}, green_flag, pitwall).")
     L.append("")
     # lap_done events (round-robin) 
     # car[idx] → triggers car[(idx+1) % n]

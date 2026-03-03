@@ -33,6 +33,27 @@ tell(To,_,inform(_,M)):-true;M=motivation(refused_message).
 tell(To,_,inform(_)):-true,To\=user.
 tell(To,_,propose_desire(_,_)):-true.
 
+broadcast_to_list([],_,_).
+broadcast_to_list([H|T],Content,Sender):-
+    send_m(H,send_message(Content,Sender)),
+    broadcast_to_list(T,Content,Sender).
+
+told(Ag,inform(broadcast(Targets,Content,Sender)),70):-
+    write('[Broadcast] from '),write(Sender),write(' to '),write(Targets),nl,
+    write('[Broadcast] content: '),write(Content),nl,
+    broadcast_to_list(Targets,Content,Sender),
+    !.
+
+tell(To,_,inform(broadcast(_,_,_))):-true.
+
+told(Ag,inform(telemetry(Car,Data,Lap)),100):-
+    write('[Telemetry] '),write(Car),
+    write(' | Lap '),write(Lap),
+    write(' | '),write(Data),nl,
+    !.
+
+tell(To,_,inform(telemetry(_,_,_))):-true.
+
 meta(P,V,AgM):-
         functor(P,F,N),N=0,clause(agent(Ag),_),
         clause(ontology(Pre,[Rep,Host],Ag),_),

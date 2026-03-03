@@ -28,7 +28,7 @@ Once the race starts, laps proceed in a strict round-robin over the ordered car 
           \item If laps remain: \texttt{random\_track\_event} is rolled, then \texttt{lap\_go}
                 is sent to \texttt{Car[0]}.
           \item If race complete: \texttt{declare\_winner} is called and \texttt{race\_end}
-                is broadcast.
+                is broadcast to all cars via \texttt{broadcast\_to\_list/3}.
         \end{itemize}
 \end{enumerate}
 

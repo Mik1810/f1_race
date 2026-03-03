@@ -35,16 +35,14 @@ random_track_event :-
               add_time(ferrari, 10),
               add_time(mclaren, 10),
               send_m(safety_car, send_message(deploy, pitwall)),
-              send_m(ferrari, send_message(safety_car_deployed, pitwall)),
-              send_m(mclaren, send_message(safety_car_deployed, pitwall))
+              broadcast_to_list([ferrari, mclaren], safety_car_deployed, pitwall)
              ),
          if(R < 4,
              (assert(track_event_this_lap),
               write('[Race Director] HEAVY RAIN. +5s to all.'), nl,
               add_time(ferrari, 5),
               add_time(mclaren, 5),
-              send_m(ferrari, send_message(rain_warning, pitwall)),
-              send_m(mclaren, send_message(rain_warning, pitwall))
+              broadcast_to_list([ferrari, mclaren], rain_warning, pitwall)
              ),
              true)))).
 
@@ -75,13 +73,11 @@ declare_winner :-
         (assert(race_over),
          write('[PitWall] === CHEQUERED FLAG ==='), nl,
          announce_winner,
-         send_m(ferrari, send_message(race_end, pitwall)),
-         send_m(mclaren, send_message(race_end, pitwall)))).
+         broadcast_to_list([ferrari, mclaren], race_end, pitwall))).
 
 sc_recalledE:>
     write('[Race Director] GREEN FLAG! Track is clear.'), nl,
-    send_m(ferrari, send_message(green_flag, pitwall)),
-    send_m(mclaren, send_message(green_flag, pitwall)).
+    broadcast_to_list([ferrari, mclaren], green_flag, pitwall).
 
 lap_done_ferrariE:>
     if(race_over, true,

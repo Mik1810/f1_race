@@ -95,8 +95,8 @@ f1_race/
 | `retire_{id}E` | DNF confirmation from pit wall; car parks |
 | `race_endE` | Race-over broadcast; asserts `race_over` |
 | *Internal events* | |
-| `engine_failure_{id}I` | ~0.2%/cycle; fires once per race; notifies pit wall of DNF |
-| `push_lap_{id}I` | ~10%/cycle; fires once per lap; deducts 3s via pit wall |
+| `engine_failure_{id}I` | ~0.2%/cycle; fires once per race; notifies pit wall of DNF; sends `inform(telemetry({id}, engine_failure, critical))` |
+| `push_lap_{id}I` | ~10%/cycle; fires once per lap; deducts 3s via pit wall; sends `inform(telemetry({id}, push_lap, active))` |
 
 **PitWallAgent**
 
@@ -111,7 +111,7 @@ f1_race/
 | *External events* | |
 | `lap_done_{id}E` | Adds lap time, rolls track event, dispatches to next car |
 | `pit_done_{id}E` | Adds +25s, dispatches to next car |
-| `sc_recalledE` | Safety car recalled; broadcasts `green_flag` to all cars |
+| `sc_recalledE` | Safety car recalled; broadcasts `green_flag` to all cars via `broadcast_to_list` |
 | `{id}_engine_failureE` | Asserts DNF, retires car, triggers `declare_winner` |
 | `{id}_push_lapE` | Subtracts 3s from the car's accumulator |
 
@@ -187,7 +187,7 @@ Once the race starts, laps proceed in a strict round-robin over the ordered car 
 1. `Car[i]` receives `lap_go_{id}` from the pit wall.
 2. `Car[i]` sends `lap_done_{id}` to the pit wall.
 3. The pit wall adds a random lap time, optionally fires a track event, and sends `lap_go_{id+1}` to the next car.
-4. After the last car of a lap completes: lap counter increments, standings printed. If laps remain: `random_track_event` is rolled, then `lap_go` is sent to Car[0]. If race complete: `declare_winner` is called and `race_end` is broadcast.
+4. After the last car of a lap completes: lap counter increments, standings printed. If laps remain: `random_track_event` is rolled, then `lap_go` is sent to Car[0]. If race complete: `declare_winner` is called and `race_end` is broadcast to all cars via `broadcast_to_list`.
 
 At any point a car's internal events (`engine_failureI`, `push_lapI`) can fire autonomously.
 
@@ -240,6 +240,7 @@ sequenceDiagram
         PW->>C1: lap_go_ferrari
     else N = total_laps
         Note over PW: declare_winner<br/>announce_winner
+        Note over PW: broadcast_to_list([ferrari,mclaren],<br/>race_end, pitwall)
         PW->>C1: race_end
         PW->>C2: race_end
     end
@@ -256,6 +257,7 @@ sequenceDiagram
 
     Note over PW: random_track_event → R < 2<br/>assert(track_event_this_lap)
     PW->>SC: deploy
+    Note over PW: broadcast_to_list([ferrari,mclaren],<br/>safety_car_deployed, pitwall)
     PW->>C1: safety_car_deployed
     PW->>C2: safety_car_deployed
 
@@ -270,6 +272,7 @@ sequenceDiagram
     SC->>PW: sc_recalled
 
     Note over PW: sc_recalledE<br/>"GREEN FLAG! Track is clear."
+    Note over PW: broadcast_to_list([ferrari,mclaren],<br/>green_flag, pitwall)
     PW->>C1: green_flag
     PW->>C2: green_flag
 
@@ -287,12 +290,15 @@ sequenceDiagram
 
     Note over C1: engine_failure_ferrari fired<br/>(random 0.2% each DALI cycle)<br/>assert(engine_failure_ferrari_fired)
     C1->>PW: ferrari_engine_failure
+    C1->>PW: inform(telemetry(ferrari,<br/>engine_failure, critical))
 
     Note over PW: ferrari_engine_failureE<br/>assert(ferrari_dnf)<br/>effective_time(ferrari) = 9999
+    Note over PW: [Telemetry] ferrari<br/>engine_failure | critical
     PW->>C1: retire_ferrari
     Note over C1: retire_ferrariE<br/>"LECLERC PARKS THE CAR"
 
     Note over PW: declare_winner<br/>(if not already race_over)<br/>announce_winner<br/>keysort by effective_time
+    Note over PW: broadcast_to_list([ferrari,mclaren],<br/>race_end, pitwall)
     PW->>C1: race_end
     PW->>C2: race_end
     Note over C1: race_endE: assert(race_over)
@@ -309,8 +315,10 @@ sequenceDiagram
     Note over C1: push_lap_ferrari condition<br/>race_started ∧ ¬race_over<br/>∧ ¬push_lap_ferrari_fired<br/>∧ random(0,100) < 10  (~10%)
     Note over C1: push_lap_ferrariI fires<br/>assert(push_lap_ferrari_fired)<br/>"PUSH LAP! going flat out!"
     C1->>PW: ferrari_push_lap
+    C1->>PW: inform(telemetry(ferrari,<br/>push_lap, active))
 
     Note over PW: ferrari_push_lapE<br/>add_time(ferrari, -3)<br/>"Ferrari fastest lap! -3s"
+    Note over PW: [Telemetry] ferrari<br/>push_lap | active
 
     Note over C1: On next lap_go_ferrari:<br/>retractall(push_lap_ferrari_fired)<br/>→ can fire again next lap
 ```
@@ -368,5 +376,7 @@ The F1 example requires fixes to three upstream DALI framework files (`active_se
 | `random(Low, High, R)` | Random integer `Low =< R < High` | `random(0, 10, R).` |
 | `if(Cond, Then, Else)` | Conditional | `if(R < 5, send_m(...), true).` |
 | `\+ Goal` | Negation-as-failure | `\+ race_over` |
+| `broadcast_to_list(Targets, Event, Sender)` | Send the same event to a list of agents (defined in `communication.con`) | `broadcast_to_list([ferrari,mclaren], race_end, pitwall).` |
+| `inform(telemetry(Car, Data, Level))` | FIPA inform with telemetry payload, priority 100, logged by pit wall | `send_m(pitwall, inform(telemetry(ferrari, push_lap, active), ferrari)).` |
 | `:- Goal.` | Directive (runs at load time) | `:- write('Agent ready!').` |
 | `keysort(+Pairs, -Sorted)` | Sort list of `Key-Value` pairs by key | `keysort([3-b, 1-a], S).` |
